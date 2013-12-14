@@ -48,14 +48,6 @@ newtype Envoy = Envoy { sendTo :: String -> IO () }
 
 type Fleet = TVar (Map String Envoy)
 
-run :: IO ()
-run = do
-  fleet <- newTVarIO Map.empty
-  channel <- newTChanIO :: IO (TChan Event)
-  void $ concurrently
-    (runEffect $ contents channel >-> P.map (fromUTF8 . encode) >-> P.stdoutLn)
-    (runEffect $ for P.stdinLn (handle fleet channel . decode . toUTF8))
-
 instance FromJSON Command where
   parseJSON (Object v) =
     do command <- v .: "command"
@@ -81,9 +73,28 @@ instance ToJSON Event where
            , "name" .= name
            , "line" .= line ]
 
-handle :: Fleet -> TChan Event -> Maybe Command -> Effect IO ()
+run :: IO ()
+run = do
+  fleet   <- newTVarIO Map.empty
+  channel <- newTChanIO
+
+  void $ runEffectsConcurrently
+    (writeChannelToStdout channel)
+    (forEveryStdinLine $ handle fleet channel)
+
+runEffectsConcurrently :: Effect IO a -> Effect IO b -> IO (a, b)
+runEffectsConcurrently a b = concurrently (runEffect a) (runEffect b)
+
+writeChannelToStdout :: ToJSON a => TChan a -> Effect IO ()
+writeChannelToStdout c =
+    contents c >-> P.map (fromUTF8 . encode) >-> P.stdoutLn
+
+forEveryStdinLine :: FromJSON a => (Maybe a -> IO ()) -> Effect IO ()
+forEveryStdinLine f = for P.stdinLn (liftIO . f . decode . toUTF8)
+
+handle :: Fleet -> TChan Event -> Maybe Command -> IO ()
 handle fleet channel (Just (Connect name host port)) =
-    liftIO . void . async $ connect host port $ \(socket, _) ->
+    void . async $ connect host port $ \(socket, _) ->
         onConnect fleet channel socket name host port
 
 onConnect :: Fleet -> TChan Event -> Socket -> String
@@ -91,12 +102,12 @@ onConnect :: Fleet -> TChan Event -> Socket -> String
 onConnect fleet channel socket name host port = do
   writeTimestamped channel $ Connected name host port
 
-  async . runEffect . for (socketLines socket) $
-    writeTimestamped channel . Received name
-
   (output, input) <- spawn Unbounded
   atomically . addEnvoy fleet name $ output
-  runEffect . inputToSocket socket $ input
+
+  void $ runEffectsConcurrently
+    (for (socketLines socket) $ writeTimestamped channel . Received name)
+    (inputToSocket socket $ input)
 
 inputToSocket :: Socket -> Input String -> Effect IO ()
 inputToSocket socket input =
