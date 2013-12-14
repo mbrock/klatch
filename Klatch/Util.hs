@@ -27,8 +27,8 @@ import qualified Pipes.Prelude as P
 import qualified Pipes.Parse as PP
 import qualified Pipes.ByteString as PBS
 
-runEffectsConcurrently :: Effect IO a -> Effect IO b -> IO (a, b)
-runEffectsConcurrently a b = concurrently (runEffect a) (runEffect b)
+runEffectsConcurrently :: Effect IO a -> Effect IO b -> IO ()
+runEffectsConcurrently a b = void $ concurrently (runEffect a) (runEffect b)
 
 writeChannelToStdout :: ToJSON a => TChan a -> Effect IO ()
 writeChannelToStdout c =

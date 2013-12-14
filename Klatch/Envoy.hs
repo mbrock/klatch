@@ -75,22 +75,29 @@ run = do
   fleet   <- newTVarIO Map.empty
   channel <- newTChanIO
 
-  void $ runEffectsConcurrently
+  runEffectsConcurrently
     (writeChannelToStdout channel)
     (forEveryStdinLine $ handle fleet channel)
 
 handle :: Fleet -> TChan Event -> Maybe Command -> IO ()
-handle fleet channel (Just (Connect name host port)) =
-  void . async $ catchError doConnect (writeException name channel)
-  where
-    doConnect =
-      connect host port $ \(socket, _) ->
-        onConnect fleet channel socket name host port
-handle fleet channel (Just (Send name line)) =
-  do envoy <- Map.lookup name <$> atomically (readTVar fleet)
-     case envoy of
-       Just (Envoy f) -> f line
-       Nothing        -> writeError name channel "No server by that name"
+handle f c (Just cmd) =
+  case cmd of
+    Connect name host port -> handleConnect f c name host port
+    Send name line         -> handleSend f c name line
+    Unknown (Just s)       -> writeError "" c ("Unknown command " ++ s)
+    Unknown Nothing        -> writeError "" c "Unreadable command"
+handle _ c Nothing = writeError "" c "Parse error"
+
+handleConnect :: Fleet -> TChan Event -> String -> String -> String -> IO ()
+handleConnect fleet channel name host port =
+  void . async . flip catchError (writeException name channel) $
+    connect host port $ \(socket, _) ->
+      onConnect fleet channel socket name host port
+
+handleSend :: Fleet -> TChan Event -> String -> String -> IO ()
+handleSend fleet channel name line =
+  Map.lookup name <$> atomically (readTVar fleet) >>=
+     maybe (writeError name channel "No such server") (flip sendTo line)
 
 onConnect :: Fleet -> TChan Event -> Socket -> String
           -> String -> String -> IO ()
@@ -98,9 +105,9 @@ onConnect fleet channel socket name host port = do
   writeTimestamped channel $ Connected name host port
 
   (output, input) <- spawn Unbounded
-  atomically . addEnvoy fleet name $ output
+  addEnvoy fleet name $ output
 
-  flip catchError (writeException name channel) . void $ runEffectsConcurrently
+  flip catchError (writeException name channel) $ runEffectsConcurrently
     (receiveLines name socket channel)
     (inputToSocket socket $ input)
 
@@ -108,6 +115,11 @@ receiveLines :: String -> Socket -> TChan Event -> Effect IO ()
 receiveLines name socket channel = do
   for (socketLines socket) $ writeTimestamped channel . Received name
   writeError name channel "Connection closed"
+
+addEnvoy :: Fleet -> String -> Output String -> IO ()
+addEnvoy m name output = atomically . modifyTVar m . Map.insert name . Envoy $ f
+  where f x = do True <- atomically $ send output (x ++ "\n")
+                 return ()
 
 writeException :: (Functor m, MonadIO m) => String -> TChan Event
                -> IOException -> m ()
@@ -122,8 +134,3 @@ timestamped f = fmap f (liftIO getPOSIXMsecs)
 writeTimestamped :: (Functor m, MonadIO m) => TChan a -> (Timestamp -> a)
                  -> m ()
 writeTimestamped c f = timestamped f >>= liftIO . atomically . writeTChan c
-
-addEnvoy :: Fleet -> String -> Output String -> STM ()
-addEnvoy m name output = modifyTVar m . Map.insert name . Envoy $ f
-  where f x = do True <- atomically $ send output (x ++ "\n")
-                 return ()
