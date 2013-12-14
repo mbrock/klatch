@@ -10,6 +10,7 @@ cabal-version: >=1.8
 
 executable klatch
   main-is: Klatch/Main.hs
+  ghc-options: -Wall
   build-depends: base,
                  transformers,
                  mtl,
