@@ -1,1 +1,1 @@
-{"command":"connect","host":"localhost","port":"6667","name":"local"}
+{"command":"connect","host":"127.0.0.1","port":"6667","name":"local"}
