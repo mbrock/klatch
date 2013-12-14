@@ -5,13 +5,15 @@ module Klatch.Envoy where
 import Klatch.Util
 
 import Control.Applicative
-import Control.Monad
-import Control.Monad.STM
+import Control.Exception (IOException)
+import Control.Monad (void)
+import Control.Monad.Error (catchError)
 import Control.Concurrent.Async
 import Control.Concurrent.STM.TVar
 import Control.Concurrent.STM.TChan
 
-import Data.Aeson
+import Data.Aeson (FromJSON, ToJSON, Value (..),
+                   (.:), (.=), object, parseJSON, toJSON)
 import GHC.Generics (Generic)
 
 import           Data.Map   (Map)
@@ -20,7 +22,6 @@ import qualified Data.Map as Map
 import Pipes
 import Pipes.Concurrent
 
-import Data.Time.Clock.POSIX
 import Network.Simple.TCP (Socket, connect)
 
 type Timestamp = Int
@@ -32,6 +33,7 @@ data Command = Connect String String String
 
 data Event = Connected String String String Timestamp
            | Received String String Timestamp
+           | Error String String Timestamp
              deriving (Eq, Show, Generic)
 
 newtype Envoy = Envoy { sendTo :: String -> IO () }
@@ -53,15 +55,20 @@ instance FromJSON Command where
 instance ToJSON Event where
   toJSON (Connected name host port t) =
     object [ "event" .= ("connected" :: String)
-           , "time" .= t
-           , "name" .= name
-           , "host" .= host
-           , "port" .= port ]
+           , "time"  .= t
+           , "name"  .= name
+           , "host"  .= host
+           , "port"  .= port ]
   toJSON (Received name line t) =
     object [ "event" .= ("received" :: String)
-           , "time" .= t
-           , "name" .= name
-           , "line" .= line ]
+           , "time"  .= t
+           , "name"  .= name
+           , "line"  .= line ]
+  toJSON (Error name description t) =
+    object [ "event"       .= ("error" :: String)
+           , "time"        .= t
+           , "name"        .= name
+           , "description" .= description ]
 
 run :: IO ()
 run = do
@@ -74,8 +81,16 @@ run = do
 
 handle :: Fleet -> TChan Event -> Maybe Command -> IO ()
 handle fleet channel (Just (Connect name host port)) =
-    void . async $ connect host port $ \(socket, _) ->
+  void . async $ catchError doConnect (writeException name channel)
+  where
+    doConnect =
+      connect host port $ \(socket, _) ->
         onConnect fleet channel socket name host port
+handle fleet channel (Just (Send name line)) =
+  do envoy <- Map.lookup name <$> atomically (readTVar fleet)
+     case envoy of
+       Just (Envoy f) -> f line
+       Nothing        -> writeError name channel "No server by that name"
 
 onConnect :: Fleet -> TChan Event -> Socket -> String
           -> String -> String -> IO ()
@@ -85,20 +100,30 @@ onConnect fleet channel socket name host port = do
   (output, input) <- spawn Unbounded
   atomically . addEnvoy fleet name $ output
 
-  void $ runEffectsConcurrently
-    (for (socketLines socket) $ writeTimestamped channel . Received name)
+  flip catchError (writeException name channel) . void $ runEffectsConcurrently
+    (receiveLines name socket channel)
     (inputToSocket socket $ input)
 
-timestamped :: (Functor m, MonadIO m) => (Timestamp -> a) -> m a
-timestamped f =
-    fmap (f . (`div` 1000000000) . fromEnum) (liftIO getPOSIXTime)
+receiveLines :: String -> Socket -> TChan Event -> Effect IO ()
+receiveLines name socket channel = do
+  for (socketLines socket) $ writeTimestamped channel . Received name
+  writeError name channel "Connection closed"
 
-writeTimestamped :: (Functor m, MonadIO m) =>
-                    TChan a -> (Timestamp -> a) -> m ()
-writeTimestamped c f =
-    timestamped f >>= liftIO . atomically . writeTChan c
+writeException :: (Functor m, MonadIO m) => String -> TChan Event
+               -> IOException -> m ()
+writeException name channel = writeError name channel . show
+
+writeError :: (Functor m, MonadIO m) => String -> TChan Event -> String -> m ()
+writeError name channel = writeTimestamped channel . Error name
+
+timestamped :: (Functor m, MonadIO m) => (Timestamp -> a) -> m a
+timestamped f = fmap f (liftIO getPOSIXMsecs)
+
+writeTimestamped :: (Functor m, MonadIO m) => TChan a -> (Timestamp -> a)
+                 -> m ()
+writeTimestamped c f = timestamped f >>= liftIO . atomically . writeTChan c
 
 addEnvoy :: Fleet -> String -> Output String -> STM ()
 addEnvoy m name output = modifyTVar m . Map.insert name . Envoy $ f
-    where f x = do True <- atomically (send output x)
-                   return ()
+  where f x = do True <- atomically $ send output (x ++ "\n")
+                 return ()

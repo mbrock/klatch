@@ -17,6 +17,7 @@ executable klatch
                  text,
                  stm,
                  containers,
+                 exceptions,
                  bytestring,
                  uuid,
                  time,

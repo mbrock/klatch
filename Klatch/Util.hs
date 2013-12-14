@@ -17,6 +17,8 @@ import qualified Data.Text.Lazy.Encoding as E
 
 import Network.Simple.TCP (Socket)
 
+import Data.Time.Clock.POSIX
+
 import Pipes
 import Pipes.Concurrent (Input, fromInput)
 import Pipes.Network.TCP (fromSocket, toSocket)
@@ -57,3 +59,6 @@ fromStrictUTF8 = fromUTF8 . BS.fromChunks . (:[])
 
 toStrictUTF8 :: String -> SB.ByteString
 toStrictUTF8 = SB.concat . BS.toChunks . toUTF8
+
+getPOSIXMsecs :: IO Int
+getPOSIXMsecs = fmap ((`div` 1000000000) . fromEnum) getPOSIXTime
