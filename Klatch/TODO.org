@@ -1,0 +1,11 @@
+Things to do with Klatch
+
+* klatch-envoy
+
+** Maintain a set of IRC connections
+
+** Accepts commands from queue
+*** connect
+*** send
+
+** Logs IRC lines to queue

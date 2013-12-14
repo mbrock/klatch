@@ -1,0 +1,32 @@
+name: klatch
+version: 0.1.0.0
+synopsis: An IRC client relay
+homepage: http://github.com/mbrock/klatch
+license: GPL
+author: Mikael Brockman
+maintainer: mikael@goula.sh
+build-type: Simple
+cabal-version: >=1.8
+
+executable klatch
+  main-is: Klatch/Main.hs
+  build-depends: base,
+                 transformers,
+                 mtl,
+                 text,
+                 stm,
+                 containers,
+                 bytestring,
+                 uuid,
+                 time,
+                 scotty,
+                 aeson,
+                 amqp,
+                 pipes,
+                 pipes-network,
+                 pipes-concurrency,
+                 pipes-bytestring,
+                 pipes-parse,
+                 network-simple,
+                 ghc-prim,
+                 async
