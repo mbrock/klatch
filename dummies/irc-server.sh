@@ -1,5 +1,5 @@
 #!/bin/bash
-while true ; do 
+while true ; do
   ( while true ; do
      echo Hello! I am an IRC server, almost.
      sleep 1

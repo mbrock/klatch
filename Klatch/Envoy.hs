@@ -41,7 +41,7 @@ run = do
     for (contents channel) (yield . fromUTF8 . encode) >-> P.stdoutLn
   runEffect $
     for P.stdinLn (handle fleet channel . decode . toUTF8)
-  
+
 toUTF8 :: String -> BS.ByteString
 toUTF8 = E.encodeUtf8 . T.pack
 
@@ -56,14 +56,14 @@ toStrictUTF8 = SB.concat . BS.toChunks . toUTF8
 
 contents :: TChan a -> Producer' a IO ()
 contents c = forever $ liftIO (atomically $ readTChan c) >>= yield
-  
+
 type Timestamp = Int
 
 data Command = Connect String String String
              | Send String String
              | Unknown (Maybe String)
                deriving (Eq, Show, Generic)
-                      
+
 data Event = Connected String String String Timestamp
            | Received String String Timestamp
              deriving (Eq, Show, Generic)
@@ -79,7 +79,7 @@ instance FromJSON Command where
          _ ->
            return $ Unknown (Just command)
   parseJSON _ = return $ Unknown Nothing
-  
+
 instance ToJSON Event where
   toJSON (Connected name host port t) =
     object ["event" .= ("connected" :: String),
@@ -92,29 +92,29 @@ instance ToJSON Event where
             "time" .= t,
             "name" .= name,
             "line" .= line]
-    
+
 timestamped :: (Timestamp -> a) -> IO a
 timestamped f = fmap (f . (`div` 1000000000) . fromEnum) getPOSIXTime
-                      
+
 handle :: Fleet -> TChan Event -> Maybe Command -> Effect IO ()
 handle fleet channel (Just (Connect name host port)) =
   void . liftIO . async $ connect host port $ \(socket, _) -> do
     event <- liftIO $ timestamped $ Connected name host port
     atomically . writeTChan channel $ event
-    
-    async . runEffect $ 
+
+    async . runEffect $
       for (PP.concat . PBS.lines $ fromSocket socket 4096) $ \line ->
         if line /= ""
         then do
           event <- liftIO . timestamped . Received name . fromStrictUTF8 $ line
           liftIO . atomically $ writeTChan channel event
         else return ()
-      
+
     (output, input) <- spawn Unbounded
     liftIO . atomically $ addEnvoy fleet name output
-    
+
     runEffect $ fromInput input >-> P.map toStrictUTF8 >-> toSocket socket
-    
+
 type Fleet = TVar (Map String (Output String))
 
 addEnvoy :: Fleet -> String -> Output String -> STM ()
