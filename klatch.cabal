@@ -33,7 +33,8 @@ executable busser
                  network-simple,
                  ghc-prim,
                  async,
-                 optparse-applicative
+                 optparse-applicative,
+                 hslogger
 
 executable envoy
   main-is: Klatch/Envoy.hs

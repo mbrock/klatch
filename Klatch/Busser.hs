@@ -28,16 +28,14 @@ import Options.Applicative.Utils (tabulate)
 
 defaults :: Map String (Maybe String)
 defaults =
-  Map.fromList [ ("BUSSER_AMQP_HOST"            , Just "127.0.0.1")
-               , ("BUSSER_AMQP_VHOST"           , Just "/")
-               , ("BUSSER_AMQP_USER"            , Just "guest")
-               , ("BUSSER_AMQP_PASSWORD"        , Just "guest")
-               , ("BUSSER_AMQP_IN_QUEUE"        , Nothing)
-               , ("BUSSER_AMQP_OUT_QUEUE"       , Nothing)
-               , ("BUSSER_AMQP_EXCHANGE"        , Nothing)
-               , ("BUSSER_AMQP_IN_BINDING_KEY"  , Just "busser-in")
-               , ("BUSSER_AMQP_OUT_BINDING_KEY" , Just "busser-out")
-               ]
+  Map.fromList [ ("BUSSER_AMQP_HOST"        , Just "127.0.0.1")
+               , ("BUSSER_AMQP_VHOST"       , Just "/")
+               , ("BUSSER_AMQP_USER"        , Just "guest")
+               , ("BUSSER_AMQP_PASSWORD"    , Just "guest")
+               , ("BUSSER_AMQP_IN_QUEUE"    , Nothing)
+               , ("BUSSER_AMQP_OUT_QUEUE"   , Nothing)
+               , ("BUSSER_AMQP_EXCHANGE"    , Nothing)
+               , ("BUSSER_AMQP_BINDING_KEY" , Just "busser") ]
   
 onlyJusts :: Ord k => Map k (Maybe v) -> Map k v
 onlyJusts = Map.mapMaybe id
@@ -78,8 +76,7 @@ connect params = do
       inQueue    = params ! "BUSSER_AMQP_IN_QUEUE"
       outQueue   = params ! "BUSSER_AMQP_OUT_QUEUE"
       exchange   = params ! "BUSSER_AMQP_EXCHANGE"
-      inKey      = params ! "BUSSER_AMQP_IN_BINDING_KEY"
-      outKey     = params ! "BUSSER_AMQP_OUT_BINDING_KEY"
+      bindingKey = params ! "BUSSER_AMQP_BINDING_KEY"
 
   conn <- openConnection host vhost user password
   chan <- openChannel conn
@@ -90,8 +87,7 @@ connect params = do
   declareExchange chan newExchange { exchangeName = exchange
                                    , exchangeType = "direct" }
 
-  bindQueue chan inQueue exchange inKey
-  bindQueue chan outQueue exchange outKey
+  bindQueue chan outQueue exchange bindingKey
   
   queueChan <- newTChanIO
 
@@ -102,7 +98,7 @@ connect params = do
 
   outputChan <- newTChanIO
   writer <- async . runEffect . for (contents outputChan) $
-    liftIO . publishMsg chan exchange outKey . makeMsg
+    liftIO . publishMsg chan exchange bindingKey . makeMsg
 
   return $ (Queue queueChan (writeTChan outputChan), writer)
 
