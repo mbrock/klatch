@@ -34,4 +34,6 @@ executable envoy
                  ghc-prim,
                  async,
                  optparse-applicative,
-                 hslogger
+                 hslogger,
+                 old-locale,
+                 hscolour

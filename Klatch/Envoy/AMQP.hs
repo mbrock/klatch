@@ -1,35 +1,28 @@
-{-# LANGUAGE TupleSections, NamedFieldPuns #-}
+{-# LANGUAGE TupleSections #-}
 
-module Klatch.Busser (
-  getParameters,
-  Queue,
-  connect,
-  readFrom,
-  writeTo
-) where
+module Klatch.Envoy.AMQP (startAmqp) where
 
+import Klatch.Envoy.Queue
 import Klatch.Util
 
-import Network.AMQP
-import qualified Data.ByteString.Lazy.Char8 as BL
-
-import Pipes (Producer, Consumer, runEffect, for, cat)
-
-import Control.Monad          (void, when)
-import Control.Monad.IO.Class (liftIO)
-import Data.List              ((\\))
-
 import Control.Concurrent.Async     (Async, async)
-import Control.Concurrent.STM       (STM, atomically)
-import Control.Concurrent.STM.TChan (TChan, newTChanIO, writeTChan)
+import Control.Concurrent.STM       (atomically)
+import Control.Concurrent.STM.TChan (newTChanIO, writeTChan)
+import Control.Monad                (void, when)
+import Control.Monad.IO.Class       (liftIO)
+import Data.List                    ((\\))
+import Data.Map                     (Map, (!))
+import Network.AMQP
+import Options.Applicative.Utils    (tabulate)
+import Pipes                        (runEffect, for)
+import System.Exit                  (exitFailure)
+import System.Posix.Env             (getEnv)
 
-import System.Posix.Env (getEnv)
-import System.Exit (exitFailure)
-
-import Data.Map (Map, (!))
+import qualified Data.ByteString.Lazy.Char8 as BL
 import qualified Data.Map as Map
 
-import Options.Applicative.Utils (tabulate)
+startAmqp :: IO (Queue, Async ())
+startAmqp = getParameters >>= connect
 
 defaults :: Map String (Maybe String)
 defaults =
@@ -57,20 +50,20 @@ getParametersAndUsedDefaults = do
 getParameters :: IO (Map String String)
 getParameters = do
   (params, usedDefaults) <- getParametersAndUsedDefaults
-  putStrLn "Using the following parameters:"
-  let f (k, v) = (k, v ++ if elem k usedDefaults
-                          then " (default)"
-                          else "")
+
+  writeLog "Using the following parameters:"
+  let f (k, v) = (k, bolded v ++ if elem k usedDefaults
+                                 then dimmed " (default)"
+                                 else "")
   putStrLn . unlines . tabulate . map f $ Map.assocs params
+
   when (Map.size params < length parameters) $ do
-    putStrLn "Missing the following mandatory parameters:"
+    writeLog "Missing the following mandatory parameters:"
     printIndentedList 2 (parameters \\ Map.keys params)
     newline
     exitFailure
-  return params
 
-data Queue = Queue { input  :: TChan String
-                   , output :: String -> STM () }
+  return params
 
 connect :: Map String String -> IO (Queue, Async ())
 connect params = do
@@ -111,11 +104,4 @@ readMsg :: Message -> String
 readMsg = BL.unpack . msgBody
 
 makeMsg :: String -> Message
-makeMsg s = newMsg { msgBody = BL.pack s
-                   , msgDeliveryMode = Just Persistent }
-
-readFrom :: Queue -> Producer String IO ()
-readFrom Queue { input } = contents input
-
-writeTo :: Queue -> Consumer String IO ()
-writeTo Queue { output } = for cat (liftIO . atomically . output)
+makeMsg s = newMsg { msgBody = BL.pack s, msgDeliveryMode = Just Persistent }

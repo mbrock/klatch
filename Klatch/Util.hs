@@ -2,30 +2,35 @@
 
 module Klatch.Util where
 
-import Control.Monad
-import Control.Monad.STM
-
+import Control.Arrow ((***))
+import Control.Applicative ((<$>))
+import Control.Concurrent (threadDelay)
 import Control.Concurrent.Async
 import Control.Concurrent.STM.TChan
-
+import Control.Monad
+import Control.Monad.STM
 import Data.Aeson
-
-import qualified Data.ByteString.Lazy as BS
-import qualified Data.ByteString as SB
-import qualified Data.Text.Lazy as T
-import qualified Data.Text.Lazy.Encoding as E
-
-import Network.Simple.TCP (Socket)
-
 import Data.Time.Clock.POSIX
-
+import Data.Time.Clock
+import Data.Time.Format
+import Language.Haskell.HsColour.ANSI
+import Network.Simple.TCP (Socket)
 import Pipes
-import Pipes.Concurrent (Input, fromInput)
+import Pipes.Concurrent (Output, Input, Buffer (Unbounded), spawn, fromInput)
 import Pipes.Network.TCP (fromSocket, toSocket)
+import System.Locale
 
-import qualified Pipes.Prelude as P
-import qualified Pipes.Parse as PP
-import qualified Pipes.ByteString as PBS
+import qualified Data.ByteString         as SB
+import qualified Data.ByteString.Lazy    as BS
+import qualified Data.Text.Lazy          as T
+import qualified Data.Text.Lazy.Encoding as E
+import qualified Pipes.ByteString        as PBS
+import qualified Pipes.Parse             as PP
+import qualified Pipes.Prelude           as P
+import qualified System.Posix.Signals    as Sig
+
+outputtingTo :: (Output a -> IO ()) -> (Input a -> IO ()) -> IO ()
+outputtingTo f g = spawn Unbounded >>= uncurry (>>) . (f *** g)
 
 runEffectsConcurrently :: Effect IO a -> Effect IO b -> IO ()
 runEffectsConcurrently a b = void $ concurrently (runEffect a) (runEffect b)
@@ -68,11 +73,35 @@ printIndentedList n xs = forM_ xs (putStrLn . (replicate n ' ' ++))
 newline :: IO ()
 newline = putStr "\n"
 
-logWrite :: Show a => Pipe a a IO ()
-logWrite = logWithPrefix "> "
+loggingWrites :: Show a => Pipe a a IO ()
+loggingWrites = loggingWithPrefix ">> "
 
-logRead :: Show a => Pipe a a IO ()
-logRead = logWithPrefix "< "
+loggingReads :: Show a => Pipe a a IO ()
+loggingReads = loggingWithPrefix "<< "
 
-logWithPrefix :: Show a => String -> Pipe a a IO ()
-logWithPrefix p = P.tee $ P.map ((p ++) . show) >-> P.stdoutLn
+loggingWithPrefix :: Show a => String -> Pipe a a IO ()
+loggingWithPrefix p = P.tee $ P.mapM (showWithPrefix p) >-> P.stdoutLn
+
+showWithPrefix :: (Functor m, MonadIO m, Show a) => String -> a -> m String
+showWithPrefix p x = formatLogLine (bolded p ++ show x)
+     
+formatLogLine :: (Functor m, MonadIO m) => String -> m String
+formatLogLine x =
+  do t <- formatTime defaultTimeLocale "%c" <$> liftIO getCurrentTime
+     return (dimmed t ++ "\n  " ++ x ++ "\n")
+
+writeLog :: String -> IO ()
+writeLog x = formatLogLine x >>= putStrLn
+
+dimmed :: String -> String
+dimmed = highlight [Dim]
+
+bolded :: String -> String
+bolded = highlight [Bold]
+
+onCtrlC :: IO () -> IO ()
+onCtrlC m =
+  void $ Sig.installHandler Sig.keyboardSignal (Sig.CatchOnce m) Nothing
+  
+sleep :: Int -> IO ()
+sleep = threadDelay . (* 1000000)
