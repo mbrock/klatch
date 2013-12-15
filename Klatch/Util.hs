@@ -68,10 +68,10 @@ printIndentedList n xs = forM_ xs (putStrLn . (replicate n ' ' ++))
 newline :: IO ()
 newline = putStr "\n"
 
-logWrite :: Pipe Event Event IO ()
+logWrite :: Show a => Pipe a a IO ()
 logWrite = logWithPrefix "> "
 
-logRead :: Pipe (Maybe Command) (Maybe Command) IO ()
+logRead :: Show a => Pipe a a IO ()
 logRead = logWithPrefix "< "
 
 logWithPrefix :: Show a => String -> Pipe a a IO ()

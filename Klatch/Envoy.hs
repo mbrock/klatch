@@ -17,9 +17,8 @@ import Control.Monad.Error          (catchError)
 import Control.Monad.IO.Class       (MonadIO, liftIO)
 import Network.Simple.TCP           (Socket, connect)
 
-import Pipes              (Pipe, Consumer, cat, for, runEffect, (>->))
+import Pipes              (Consumer, cat, for, runEffect, (>->))
 import Pipes.Concurrent   (Output, Input, Buffer (Unbounded), spawn, send)
-import qualified Pipes.Prelude as P
 
 import Data.Aeson   (FromJSON, ToJSON, Value (..), (.:), (.=),
                      object, parseJSON, toJSON)
@@ -28,6 +27,9 @@ import GHC.Generics (Generic)
 import           Data.Map   (Map)
 import qualified Data.Map as Map
 
+envoyVersion :: Int
+envoyVersion = 1
+
 type Timestamp = Int
 
 data Command = Connect String String String
@@ -35,10 +37,12 @@ data Command = Connect String String String
              | Unknown (Maybe String)
                deriving (Eq, Show, Generic)
 
-data Event = Connected String String String Timestamp
-           | Received String String Timestamp
-           | Error String String Timestamp
-           | Started Timestamp
+type EventMetadata = (Timestamp, Int)
+
+data Event = Connected String String String EventMetadata
+           | Received String String EventMetadata
+           | Error String String EventMetadata
+           | Started EventMetadata
              deriving (Eq, Show, Generic)
 
 newtype Envoy = Envoy { sendTo :: String -> IO () }
@@ -58,25 +62,29 @@ instance FromJSON Command where
   parseJSON _ = return $ Unknown Nothing
 
 instance ToJSON Event where
-  toJSON (Connected name host port t) =
-    object [ "event" .= ("connected" :: String)
-           , "time"  .= t
-           , "name"  .= name
-           , "host"  .= host
-           , "port"  .= port ]
-  toJSON (Received name line t) =
-    object [ "event" .= ("received" :: String)
-           , "time"  .= t
-           , "name"  .= name
-           , "line"  .= line ]
-  toJSON (Started t) =
-    object [ "event" .= ("started" :: String)
-           , "time"  .= t ]
-  toJSON (Error name description t) =
-    object [ "event"       .= ("error" :: String)
-           , "time"        .= t
-           , "name"        .= name
-           , "description" .= description ]
+  toJSON (Connected name host port (t, v)) =
+    object [ "event"                .= ("connected" :: String)
+           , "time"                 .= t
+           , "version"              .= v
+           , "name"                 .= name
+           , "host"                 .= host
+           , "port"                 .= port ]
+  toJSON (Received name line (t, v)) =
+    object [ "event"                .= ("received" :: String)
+           , "time"                 .= t
+           , "version"              .= v
+           , "name"                 .= name
+           , "line"                 .= line ]
+  toJSON (Started (t, v)) =
+    object [ "event"                .= ("started" :: String)
+           , "time"                 .= t
+           , "version"              .= v ]
+  toJSON (Error name description (t, v)) =
+    object [ "event"                .= ("error" :: String)
+           , "time"                 .= t
+           , "version"              .= v
+           , "name"                 .= name
+           , "description"          .= description ]
 
 main :: IO ()
 main = do
@@ -84,7 +92,7 @@ main = do
   fleet       <- newTVarIO Map.empty
   channel     <- newTChanIO
   
-  writeTimestamped channel Started
+  writeEvent channel Started
 
   runEffectsConcurrently
     (contents channel >-> logWrite >-> encoder >-> Busser.writeTo busser)
@@ -116,7 +124,7 @@ handleSend fleet channel name line =
 onConnect :: Fleet -> TChan Event -> Socket -> String
           -> String -> String -> IO ()
 onConnect fleet channel socket name host port = do
-  writeTimestamped channel $ Connected name host port
+  writeEvent channel $ Connected name host port
   flip catchError (writeException name channel) . void $ concurrently
     (receiveLines name socket channel)
     (addEnvoy fleet name `outputtingTo` writeToSocket socket)
@@ -126,7 +134,7 @@ outputtingTo f g = spawn Unbounded >>= uncurry (>>) . (f *** g)
 
 receiveLines :: String -> Socket -> TChan Event -> IO ()
 receiveLines name socket channel = runEffect $ do
-  for (socketLines socket) $ writeTimestamped channel . Received name
+  for (socketLines socket) $ writeEvent channel . Received name
   writeError name channel "Connection closed"
 
 addEnvoy :: Fleet -> String -> Output String -> IO ()
@@ -139,11 +147,12 @@ writeException :: (Functor m, MonadIO m) => String -> TChan Event
 writeException name channel = writeError name channel . show
 
 writeError :: (Functor m, MonadIO m) => String -> TChan Event -> String -> m ()
-writeError name channel = writeTimestamped channel . Error name
+writeError name channel = writeEvent channel . Error name
 
 timestamped :: (Functor m, MonadIO m) => (Timestamp -> a) -> m a
 timestamped = (<$> liftIO getPOSIXMsecs)
 
-writeTimestamped :: (Functor m, MonadIO m) => TChan a -> (Timestamp -> a)
-                 -> m ()
-writeTimestamped c f = timestamped f >>= liftIO . atomically . writeTChan c
+writeEvent :: (Functor m, MonadIO m) => TChan a -> (EventMetadata -> a) -> m ()
+writeEvent c f = do 
+  timestamp <- liftIO getPOSIXMsecs
+  liftIO . atomically . writeTChan c $ f (timestamp, envoyVersion)
