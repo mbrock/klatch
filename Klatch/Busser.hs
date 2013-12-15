@@ -1,25 +1,43 @@
-{-# LANGUAGE TupleSections #-}
+{-# LANGUAGE TupleSections, NamedFieldPuns #-}
 
 module Main where
 
-import Control.Monad (void)
+import Klatch.Util
+
+import Network.AMQP
+import qualified Data.ByteString.Lazy.Char8 as BL
+
+import Pipes (Effect, runEffect, (>->), for)
+import qualified Pipes.Prelude as P
+
+import Control.Monad          (void, when)
+import Control.Monad.IO.Class (liftIO)
+import Data.List              ((\\))
+
+import Control.Concurrent.Async     (Async, concurrently, async, link)
+import Control.Concurrent.STM       (STM, atomically)
+import Control.Concurrent.STM.TChan (TChan, newTChanIO, writeTChan)
 
 import System.Posix.Env (getEnv)
+import System.Exit (exitFailure)
 
-import Data.Map (Map)
+import Data.Map (Map, (!))
 import qualified Data.Map as Map
 
 import Options.Applicative.Utils (tabulate)
 
 defaults :: Map String (Maybe String)
 defaults =
-  Map.fromList [ ("BUSSER_AMQP_HOST"        , Just "127.0.0.1")
-               , ("BUSSER_AMQP_VHOST"       , Just "/")
-               , ("BUSSER_AMQP_USER"        , Just "guest")
-               , ("BUSSER_AMQP_PASSWORD"    , Just "guest")
-               , ("BUSSER_AMQP_QUEUE"       , Nothing)
-               , ("BUSSER_AMQP_EXCHANGE"    , Nothing)
-               , ("BUSSER_AMQP_BINDING_KEY" , Just "busser") ]
+  Map.fromList [ ("BUSSER_AMQP_HOST"            , Just "127.0.0.1")
+               , ("BUSSER_AMQP_VHOST"           , Just "/")
+               , ("BUSSER_AMQP_USER"            , Just "guest")
+               , ("BUSSER_AMQP_PASSWORD"        , Just "guest")
+               , ("BUSSER_AMQP_IN_QUEUE"        , Nothing)
+               , ("BUSSER_AMQP_OUT_QUEUE"       , Nothing)
+               , ("BUSSER_AMQP_EXCHANGE"        , Nothing)
+               , ("BUSSER_AMQP_IN_BINDING_KEY"  , Just "busser-in")
+               , ("BUSSER_AMQP_OUT_BINDING_KEY" , Just "busser-out")
+               ]
   
 onlyJusts :: Ord k => Map k (Maybe v) -> Map k v
 onlyJusts = Map.mapMaybe id
@@ -41,9 +59,71 @@ getParameters = do
                           then " (default)"
                           else "")
   putStrLn . unlines . tabulate . map f $ Map.assocs params
+  when (Map.size params < length parameters) $ do
+    putStrLn "Missing the following mandatory parameters:"
+    printIndentedList 2 (parameters \\ Map.keys params)
+    newline
+    exitFailure
   return params
 
+data Queue = Queue { input  :: TChan String
+                   , output :: String -> STM () }
+
+connect :: Map String String -> IO (Queue, Async ())
+connect params = do
+  let host       = params ! "BUSSER_AMQP_HOST"
+      vhost      = params ! "BUSSER_AMQP_VHOST"
+      user       = params ! "BUSSER_AMQP_USER"
+      password   = params ! "BUSSER_AMQP_PASSWORD"
+      inQueue    = params ! "BUSSER_AMQP_IN_QUEUE"
+      outQueue   = params ! "BUSSER_AMQP_OUT_QUEUE"
+      exchange   = params ! "BUSSER_AMQP_EXCHANGE"
+      inKey      = params ! "BUSSER_AMQP_IN_BINDING_KEY"
+      outKey     = params ! "BUSSER_AMQP_OUT_BINDING_KEY"
+
+  conn <- openConnection host vhost user password
+  chan <- openChannel conn
+
+  declareQueue chan newQueue { queueName = inQueue }
+  declareQueue chan newQueue { queueName = outQueue }
+
+  declareExchange chan newExchange { exchangeName = exchange
+                                   , exchangeType = "direct" }
+
+  bindQueue chan inQueue exchange inKey
+  bindQueue chan outQueue exchange outKey
+  
+  queueChan <- newTChanIO
+
+  let report = atomically . writeTChan queueChan . readMsg
+      onMsg (msg, env) = report msg >> ackEnv env
+
+  consumeMsgs chan inQueue Ack onMsg
+
+  outputChan <- newTChanIO
+  writer <- async . runEffect . for (contents outputChan) $
+    liftIO . publishMsg chan exchange outKey . makeMsg
+
+  return $ (Queue queueChan (writeTChan outputChan), writer)
+
+readMsg :: Message -> String
+readMsg = BL.unpack . msgBody
+
+makeMsg :: String -> Message
+makeMsg s = newMsg { msgBody = BL.pack s
+                   , msgDeliveryMode = Just Persistent }
+
+readFrom :: Queue -> Effect IO ()
+readFrom Queue { input } = contents input >-> P.stdoutLn
+
+writeTo :: Queue -> Effect IO ()
+writeTo Queue { output } = for P.stdinLn (liftIO . atomically . output)
+                        
 main :: IO ()
 main = do
-  putStrLn "\nStarting Busser...\n"
-  void getParameters
+  newline >> putStrLn "Starting Busser..." >> newline
+  params <- getParameters
+  (queue, writer) <- connect params
+  runEffectsConcurrently (readFrom queue) (writeTo queue)
+  link writer
+  exitFailure

@@ -12,8 +12,28 @@ executable busser
   main-is: Klatch/Busser.hs
   ghc-options: -Wall
   build-depends: base, containers,
-                 optparse-applicative,
-                 unix
+                 transformers,
+                 mtl,
+                 text,
+                 stm,
+                 containers,
+                 exceptions,
+                 bytestring,
+                 unix,
+                 uuid,
+                 time,
+                 scotty,
+                 aeson,
+                 amqp,
+                 pipes,
+                 pipes-network,
+                 pipes-concurrency,
+                 pipes-bytestring,
+                 pipes-parse,
+                 network-simple,
+                 ghc-prim,
+                 async,
+                 optparse-applicative
 
 executable envoy
   main-is: Klatch/Envoy.hs

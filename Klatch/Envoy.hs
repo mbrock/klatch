@@ -78,7 +78,7 @@ main = do
   channel <- newTChanIO
 
   runEffectsConcurrently
-    (writeChannelToStdout channel)
+    (encodeChannelToStdout channel)
     (forEveryStdinLine $ handle fleet channel)
 
 handle :: Fleet -> TChan Event -> Maybe Command -> IO ()

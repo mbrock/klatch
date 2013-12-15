@@ -30,8 +30,8 @@ import qualified Pipes.ByteString as PBS
 runEffectsConcurrently :: Effect IO a -> Effect IO b -> IO ()
 runEffectsConcurrently a b = void $ concurrently (runEffect a) (runEffect b)
 
-writeChannelToStdout :: ToJSON a => TChan a -> Effect IO ()
-writeChannelToStdout c =
+encodeChannelToStdout :: ToJSON a => TChan a -> Effect IO ()
+encodeChannelToStdout c =
     contents c >-> P.map (fromUTF8 . encode) >-> P.stdoutLn
 
 forEveryStdinLine :: FromJSON a => (Maybe a -> IO ()) -> Effect IO ()
@@ -62,3 +62,9 @@ toStrictUTF8 = SB.concat . BS.toChunks . toUTF8
 
 getPOSIXMsecs :: IO Int
 getPOSIXMsecs = fmap ((`div` 1000000000) . fromEnum) getPOSIXTime
+
+printIndentedList :: Int -> [String] -> IO ()
+printIndentedList n xs = forM_ xs (putStrLn . (replicate n ' ' ++))
+
+newline :: IO ()
+newline = putStr "\n"
