@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveGeneric, OverloadedStrings #-}
 
-module Klatch.Envoy where
+module Main where
 
 import Klatch.Util
 
@@ -72,8 +72,8 @@ instance ToJSON Event where
            , "name"        .= name
            , "description" .= description ]
 
-run :: IO ()
-run = do
+main :: IO ()
+main = do
   fleet   <- newTVarIO Map.empty
   channel <- newTChanIO
 
