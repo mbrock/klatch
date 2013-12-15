@@ -4,26 +4,27 @@ module Klatch.Envoy where
 
 import Klatch.Util
 
-import Control.Arrow ((***))
-import Control.Applicative
-import Control.Exception (IOException)
-import Control.Monad (void)
-import Control.Monad.Error (catchError)
-import Control.Concurrent.Async
-import Control.Concurrent.STM.TVar
-import Control.Concurrent.STM.TChan
+import Control.Applicative          ((<$>), (<*>))
+import Control.Arrow                ((***))
+import Control.Concurrent.Async     (concurrently, async)
+import Control.Concurrent.STM       (atomically)
+import Control.Concurrent.STM.TChan (TChan, newTChanIO, writeTChan)
+import Control.Concurrent.STM.TVar  (TVar, newTVarIO, readTVar, modifyTVar)
+import Control.Exception            (IOException)
+import Control.Monad                (void)
+import Control.Monad.Error          (catchError)
+import Control.Monad.IO.Class       (MonadIO, liftIO)
+import Network.Simple.TCP           (Socket, connect)
 
-import Data.Aeson (FromJSON, ToJSON, Value (..),
-                   (.:), (.=), object, parseJSON, toJSON)
+import Pipes              (for, runEffect)
+import Pipes.Concurrent   (Output, Input, Buffer (Unbounded), spawn, send)
+
+import Data.Aeson   (FromJSON, ToJSON, Value (..), (.:), (.=),
+                     object, parseJSON, toJSON)
 import GHC.Generics (Generic)
 
 import           Data.Map   (Map)
 import qualified Data.Map as Map
-
-import Pipes
-import Pipes.Concurrent
-
-import Network.Simple.TCP (Socket, connect)
 
 type Timestamp = Int
 
