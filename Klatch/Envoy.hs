@@ -3,6 +3,7 @@
 module Main where
 
 import Klatch.Util
+import qualified Klatch.Busser as Busser
 
 import Control.Applicative          ((<$>), (<*>))
 import Control.Arrow                ((***))
@@ -16,8 +17,9 @@ import Control.Monad.Error          (catchError)
 import Control.Monad.IO.Class       (MonadIO, liftIO)
 import Network.Simple.TCP           (Socket, connect)
 
-import Pipes              (for, runEffect)
+import Pipes              (Pipe, Consumer, cat, for, runEffect, (>->))
 import Pipes.Concurrent   (Output, Input, Buffer (Unbounded), spawn, send)
+import qualified Pipes.Prelude as P
 
 import Data.Aeson   (FromJSON, ToJSON, Value (..), (.:), (.=),
                      object, parseJSON, toJSON)
@@ -36,6 +38,7 @@ data Command = Connect String String String
 data Event = Connected String String String Timestamp
            | Received String String Timestamp
            | Error String String Timestamp
+           | Started Timestamp
              deriving (Eq, Show, Generic)
 
 newtype Envoy = Envoy { sendTo :: String -> IO () }
@@ -66,6 +69,9 @@ instance ToJSON Event where
            , "time"  .= t
            , "name"  .= name
            , "line"  .= line ]
+  toJSON (Started t) =
+    object [ "event" .= ("started" :: String)
+           , "time"  .= t ]
   toJSON (Error name description t) =
     object [ "event"       .= ("error" :: String)
            , "time"        .= t
@@ -74,13 +80,19 @@ instance ToJSON Event where
 
 main :: IO ()
 main = do
-  fleet   <- newTVarIO Map.empty
-  channel <- newTChanIO
+  (busser, _) <- Busser.getParameters >>= Busser.connect
+  fleet       <- newTVarIO Map.empty
+  channel     <- newTChanIO
+  
+  writeTimestamped channel Started
 
   runEffectsConcurrently
-    (encodeChannelToStdout channel)
-    (forEveryStdinLine $ handle fleet channel)
+    (contents channel >-> logWrite >-> encoder >-> Busser.writeTo busser)
+    (Busser.readFrom busser >-> decoder >-> logRead >-> handler fleet channel)
 
+handler :: Fleet -> TChan Event -> Consumer (Maybe Command) IO ()
+handler f c = for cat (liftIO . handle f c)
+    
 handle :: Fleet -> TChan Event -> Maybe Command -> IO ()
 handle f c (Just cmd) =
   case cmd of

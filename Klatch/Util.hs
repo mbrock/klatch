@@ -30,12 +30,11 @@ import qualified Pipes.ByteString as PBS
 runEffectsConcurrently :: Effect IO a -> Effect IO b -> IO ()
 runEffectsConcurrently a b = void $ concurrently (runEffect a) (runEffect b)
 
-encodeChannelToStdout :: ToJSON a => TChan a -> Effect IO ()
-encodeChannelToStdout c =
-    contents c >-> P.map (fromUTF8 . encode) >-> P.stdoutLn
+encoder :: ToJSON a => Pipe a String IO ()
+encoder = P.map (fromUTF8 . encode)
 
-forEveryStdinLine :: FromJSON a => (Maybe a -> IO ()) -> Effect IO ()
-forEveryStdinLine f = for P.stdinLn (liftIO . f . decode . toUTF8)
+decoder :: FromJSON a => Pipe String (Maybe a) IO ()
+decoder = P.map (decode . toUTF8)
 
 contents :: TChan a -> Producer a IO ()
 contents c = forever $ liftIO (atomically $ readTChan c) >>= yield
@@ -68,3 +67,12 @@ printIndentedList n xs = forM_ xs (putStrLn . (replicate n ' ' ++))
 
 newline :: IO ()
 newline = putStr "\n"
+
+logWrite :: Pipe Event Event IO ()
+logWrite = logWithPrefix "> "
+
+logRead :: Pipe (Maybe Command) (Maybe Command) IO ()
+logRead = logWithPrefix "< "
+
+logWithPrefix :: Show a => String -> Pipe a a IO ()
+logWithPrefix p = P.tee $ P.map ((p ++) . show) >-> P.stdoutLn

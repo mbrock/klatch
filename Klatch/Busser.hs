@@ -1,13 +1,19 @@
 {-# LANGUAGE TupleSections, NamedFieldPuns #-}
 
-module Main where
+module Klatch.Busser (
+  getParameters,
+  Queue,
+  connect,
+  readFrom,
+  writeTo
+) where
 
 import Klatch.Util
 
 import Network.AMQP
 import qualified Data.ByteString.Lazy.Char8 as BL
 
-import Pipes (Effect, runEffect, (>->), for)
+import Pipes (Producer, Consumer, Effect, runEffect, (>->), for, cat)
 import qualified Pipes.Prelude as P
 
 import Control.Monad          (void, when)
@@ -109,17 +115,8 @@ makeMsg :: String -> Message
 makeMsg s = newMsg { msgBody = BL.pack s
                    , msgDeliveryMode = Just Persistent }
 
-readFrom :: Queue -> Effect IO ()
-readFrom Queue { input } = contents input >-> P.stdoutLn
+readFrom :: Queue -> Producer String IO ()
+readFrom Queue { input } = contents input
 
-writeTo :: Queue -> Effect IO ()
-writeTo Queue { output } = for P.stdinLn (liftIO . atomically . output)
-                        
-main :: IO ()
-main = do
-  newline >> putStrLn "Starting Busser..." >> newline
-  params <- getParameters
-  (queue, writer) <- connect params
-  runEffectsConcurrently (readFrom queue) (writeTo queue)
-  link writer
-  exitFailure
+writeTo :: Queue -> Consumer String IO ()
+writeTo Queue { output } = for cat (liftIO . atomically . output)

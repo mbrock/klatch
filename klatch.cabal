@@ -8,10 +8,10 @@ maintainer: mikael@goula.sh
 build-type: Simple
 cabal-version: >=1.8
 
-executable busser
-  main-is: Klatch/Busser.hs
+executable envoy
+  main-is: Klatch/Envoy.hs
   ghc-options: -Wall
-  build-depends: base, containers,
+  build-depends: base,
                  transformers,
                  mtl,
                  text,
@@ -35,28 +35,3 @@ executable busser
                  async,
                  optparse-applicative,
                  hslogger
-
-executable envoy
-  main-is: Klatch/Envoy.hs
-  ghc-options: -Wall
-  build-depends: base,
-                 transformers,
-                 mtl,
-                 text,
-                 stm,
-                 containers,
-                 exceptions,
-                 bytestring,
-                 uuid,
-                 time,
-                 scotty,
-                 aeson,
-                 amqp,
-                 pipes,
-                 pipes-network,
-                 pipes-concurrency,
-                 pipes-bytestring,
-                 pipes-parse,
-                 network-simple,
-                 ghc-prim,
-                 async
