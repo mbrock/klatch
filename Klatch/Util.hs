@@ -40,9 +40,9 @@ forEveryStdinLine f = for P.stdinLn (liftIO . f . decode . toUTF8)
 contents :: TChan a -> Producer a IO ()
 contents c = forever $ liftIO (atomically $ readTChan c) >>= yield
 
-inputToSocket :: Socket -> Input String -> Effect IO ()
-inputToSocket socket input =
-    fromInput input >-> P.map toStrictUTF8 >-> toSocket socket
+writeToSocket :: Socket -> Input String -> IO ()
+writeToSocket socket input = runEffect $
+  fromInput input >-> P.map toStrictUTF8 >-> toSocket socket
 
 socketLines :: Socket -> Producer String IO ()
 socketLines s = p >-> P.filter (/= "") >-> P.map fromStrictUTF8

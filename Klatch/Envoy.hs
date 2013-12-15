@@ -4,6 +4,7 @@ module Klatch.Envoy where
 
 import Klatch.Util
 
+import Control.Arrow ((***))
 import Control.Applicative
 import Control.Exception (IOException)
 import Control.Monad (void)
@@ -97,28 +98,27 @@ handleConnect fleet channel name host port =
 handleSend :: Fleet -> TChan Event -> String -> String -> IO ()
 handleSend fleet channel name line =
   Map.lookup name <$> atomically (readTVar fleet) >>=
-     maybe (writeError name channel "No such server") (flip sendTo line)
+    maybe (writeError name channel "No such server") (flip sendTo line)
 
 onConnect :: Fleet -> TChan Event -> Socket -> String
           -> String -> String -> IO ()
 onConnect fleet channel socket name host port = do
   writeTimestamped channel $ Connected name host port
-
-  (output, input) <- spawn Unbounded
-  addEnvoy fleet name $ output
-
-  flip catchError (writeException name channel) $ runEffectsConcurrently
+  flip catchError (writeException name channel) . void $ concurrently
     (receiveLines name socket channel)
-    (inputToSocket socket $ input)
+    (addEnvoy fleet name `outputtingTo` writeToSocket socket)
 
-receiveLines :: String -> Socket -> TChan Event -> Effect IO ()
-receiveLines name socket channel = do
+outputtingTo :: (Output a -> IO ()) -> (Input a -> IO ()) -> IO ()
+outputtingTo f g = spawn Unbounded >>= uncurry (>>) . (f *** g)
+
+receiveLines :: String -> Socket -> TChan Event -> IO ()
+receiveLines name socket channel = runEffect $ do
   for (socketLines socket) $ writeTimestamped channel . Received name
   writeError name channel "Connection closed"
 
 addEnvoy :: Fleet -> String -> Output String -> IO ()
-addEnvoy m name output = atomically . modifyTVar m . Map.insert name . Envoy $ f
-  where f x = do True <- atomically $ send output (x ++ "\n")
+addEnvoy m name o = atomically . modifyTVar m . Map.insert name . Envoy $ f
+  where f x = do True <- atomically $ send o (x ++ "\n")
                  return ()
 
 writeException :: (Functor m, MonadIO m) => String -> TChan Event
@@ -129,7 +129,7 @@ writeError :: (Functor m, MonadIO m) => String -> TChan Event -> String -> m ()
 writeError name channel = writeTimestamped channel . Error name
 
 timestamped :: (Functor m, MonadIO m) => (Timestamp -> a) -> m a
-timestamped f = fmap f (liftIO getPOSIXMsecs)
+timestamped = (<$> liftIO getPOSIXMsecs)
 
 writeTimestamped :: (Functor m, MonadIO m) => TChan a -> (Timestamp -> a)
                  -> m ()
