@@ -10,7 +10,7 @@ import Pipes                        (Consumer, cat, for, (>->))
 
 import qualified Data.Map as Map
 
-import Klatch.Envoy.AMQP   (startAmqp)
+import Klatch.Envoy.AMQP   (Role (EnvoyRole), startAmqp)
 import Klatch.Envoy.JSON   ()
 import Klatch.Envoy.Queue  (writeTo, readFrom, writeEvent, writeError)
 import Klatch.Envoy.Socket (handleConnect, handleSend)
@@ -24,7 +24,7 @@ main = do
   newline
   writeLog "Your illustrious fleet of envoys is setting up."
   
-  (amqp, _) <- startAmqp
+  (amqp, _) <- startAmqp EnvoyRole
   state@(_, channel) <- initialize
   
   writeEvent channel Started

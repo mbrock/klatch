@@ -44,6 +44,9 @@ decoder = P.map (decode . toUTF8)
 contents :: TChan a -> Producer a IO ()
 contents c = forever $ liftIO (atomically $ readTChan c) >>= yield
 
+ignore :: Monad m => Consumer a m ()
+ignore = for cat (const $ return ())
+
 writeToSocket :: Socket -> Input String -> IO ()
 writeToSocket socket input = runEffect $
   fromInput input >-> P.map toStrictUTF8 >-> toSocket socket

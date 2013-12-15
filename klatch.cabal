@@ -8,6 +8,36 @@ maintainer: mikael@goula.sh
 build-type: Simple
 cabal-version: >=1.8
 
+executable embassy
+  main-is: Klatch/Embassy.hs
+  ghc-options: -Wall
+  build-depends: base,
+                 transformers,
+                 mtl,
+                 text,
+                 stm,
+                 containers,
+                 exceptions,
+                 bytestring,
+                 unix,
+                 uuid,
+                 time,
+                 scotty,
+                 aeson,
+                 amqp,
+                 pipes,
+                 pipes-network,
+                 pipes-concurrency,
+                 pipes-bytestring,
+                 pipes-parse,
+                 network-simple,
+                 ghc-prim,
+                 async,
+                 optparse-applicative,
+                 hslogger,
+                 old-locale,
+                 hscolour
+
 executable envoy
   main-is: Klatch/Envoy.hs
   ghc-options: -Wall
