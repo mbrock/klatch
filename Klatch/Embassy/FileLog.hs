@@ -1,14 +1,15 @@
 module Klatch.Embassy.FileLog where
 
-import Control.Applicative ((<$>))
+import Control.Applicative     ((<$>))
 import Control.Concurrent.STM
-import Data.Map ((!))
-import Data.Text.Lazy (pack, unpack)
+import Data.Map                ((!))
+import Data.Text.Lazy          (pack, unpack)
 import Data.Text.Lazy.Encoding (decodeUtf8, encodeUtf8)
-import System.Directory (doesFileExist)
+import System.Directory        (doesFileExist)
 
 import qualified Data.ByteString.Lazy as BS
-import qualified Data.Map as Map
+import qualified Data.Text            as T
+import qualified Data.Map             as Map
 
 import Klatch.Params
 import Klatch.Util (writeLog, bolded)
@@ -21,16 +22,16 @@ defaults = Map.fromList [ ("EMBASSY_LOG", Nothing) ]
 startFileLog :: (Read a, Show a) => (FileLog a -> [a] -> IO ()) -> IO ()
 startFileLog f = do
   params <- getParameters "embassy" defaults
-  uncurry f =<< makeLog (params ! "EMBASSY_LOG")
+  uncurry f =<< (makeLog . T.unpack $ params ! "EMBASSY_LOG")
 
 makeLog :: (Read a, Show a) => String -> IO (FileLog a, [a])
 makeLog path = do
-  old <- createOrRead path []  
+  old <- createOrRead path []
   xs  <- newTVarIO old
-  
-  let fileLog = FileLog $ \x -> 
+
+  let fileLog = FileLog $ \x ->
         addToLog xs x >>= BS.writeFile path . encodeUtf8 . pack . show
-               
+
   return (fileLog, old)
 
 createOrRead :: (Read a, Show a) => String -> a -> IO a
@@ -48,4 +49,3 @@ addToLog v x = atomically $ do
   xs <- readTVar v
   writeTVar v (x:xs)
   return (x:xs)
-  

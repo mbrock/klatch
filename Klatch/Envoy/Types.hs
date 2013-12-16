@@ -3,28 +3,29 @@
 module Klatch.Envoy.Types where
 
 import Control.Concurrent.STM.TVar (TVar)
-import Data.Map (Map)
-import GHC.Generics (Generic)
+import Data.Map                    (Map)
+import Data.Text                   (Text)
+import GHC.Generics                (Generic)
 
 envoyVersion :: Int
 envoyVersion = 1
 
 type Timestamp = Int
 
-data Command = Connect  String String String
-             | Send     String String
-             | Unknown  (Maybe String)
+data Command = Connect  Text Text Text
+             | Send     Text Text
+             | Unknown  (Maybe Text)
                deriving (Eq, Show, Generic)
 
 type EventMetadata = (Timestamp, Int)
 
-data Event = Connected  String String String EventMetadata
-           | Received   String String        EventMetadata
-           | Error      String String        EventMetadata
-           | Started                         EventMetadata
-           | Stopping                        EventMetadata
+data Event = Connected  Text Text Text EventMetadata
+           | Received   Text Text      EventMetadata
+           | Error      Text Text      EventMetadata
+           | Started                   EventMetadata
+           | Stopping                  EventMetadata
              deriving (Eq, Show, Generic)
 
-newtype Envoy = Envoy { sendTo :: String -> IO () }
+newtype Envoy = Envoy { sendTo :: Text -> IO () }
 
-type Fleet = TVar (Map String Envoy)
+type Fleet = TVar (Map Text Envoy)

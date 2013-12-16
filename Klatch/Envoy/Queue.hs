@@ -2,35 +2,36 @@
 
 module Klatch.Envoy.Queue where
 
-import Control.Applicative ((<$>))
+import Control.Applicative    ((<$>))
 import Control.Concurrent.STM (STM, TChan, atomically, writeTChan)
-import Control.Exception (IOException)
+import Control.Exception      (IOException)
 import Control.Monad.IO.Class (MonadIO, liftIO)
-import Pipes (Producer, Consumer, for, cat)
+import Data.Text              (Text, pack)
+import Pipes                  (Producer, Consumer, for, cat)
 
 import Klatch.Envoy.Types
 import Klatch.Util (contents, getPOSIXMsecs)
 
-data Queue = Queue { input  :: TChan String
-                   , output :: String -> STM () }
+data Queue = Queue { input  :: TChan Text
+                   , output :: Text -> STM () }
 
-readFrom :: Queue -> Producer String IO ()
+readFrom :: Queue -> Producer Text IO ()
 readFrom Queue { input } = contents input
 
-writeTo :: Queue -> Consumer String IO ()
+writeTo :: Queue -> Consumer Text IO ()
 writeTo Queue { output } = for cat (liftIO . atomically . output)
 
-writeException :: (Functor m, MonadIO m) => String -> TChan Event
+writeException :: (Functor m, MonadIO m) => Text -> TChan Event
                -> IOException -> m ()
-writeException name channel = writeError name channel . show
+writeException name channel = writeError name channel . pack . show
 
-writeError :: (Functor m, MonadIO m) => String -> TChan Event -> String -> m ()
+writeError :: (Functor m, MonadIO m) => Text -> TChan Event -> Text -> m ()
 writeError name channel = writeEvent channel . Error name
 
 timestamped :: (Functor m, MonadIO m) => (Timestamp -> a) -> m a
 timestamped = (<$> liftIO getPOSIXMsecs)
 
 writeEvent :: (Functor m, MonadIO m) => TChan a -> (EventMetadata -> a) -> m ()
-writeEvent c f = do 
+writeEvent c f = do
   timestamp <- liftIO getPOSIXMsecs
   liftIO . atomically . writeTChan c $ f (timestamp, envoyVersion)

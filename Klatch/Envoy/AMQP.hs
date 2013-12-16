@@ -1,4 +1,4 @@
-{-# LANGUAGE TupleSections #-}
+{-# LANGUAGE TupleSections, OverloadedStrings #-}
 
 module Klatch.Envoy.AMQP (startAmqp, Role (EnvoyRole, EmbassyRole)) where
 
@@ -12,11 +12,13 @@ import Control.Concurrent.STM.TChan (newTChanIO, writeTChan)
 import Control.Monad                (void)
 import Control.Monad.IO.Class       (liftIO)
 import Data.Map                     ((!))
+import Data.Text                    (Text, unpack)
 import Network.AMQP
 import Pipes                        (runEffect, for)
 
-import qualified Data.ByteString.Lazy.Char8 as BL
-import qualified Data.Map as Map
+import qualified Data.Text.Lazy.Encoding    as LE
+import qualified Data.Text.Lazy             as TL
+import qualified Data.Map                   as Map
 
 data Role = EnvoyRole | EmbassyRole
 
@@ -33,19 +35,19 @@ defaults role =
                , ("ENVOY_AMQP_OUT_QUEUE"   , Just "envoy-out")
                , ("ENVOY_AMQP_EXCHANGE"    , Just "klatch")
                , ("ENVOY_AMQP_BINDING_KEY" , Just (getBindingKey role)) ]
-  
-getBindingKey :: Role -> String
+
+getBindingKey :: Role -> Text
 getBindingKey EnvoyRole   = "envoy"
 getBindingKey EmbassyRole = "embassy"
 
 getAmqpParameters :: Role -> IO Params
 getAmqpParameters r = getParameters "AMQP" (defaults r)
 
-getInQueue :: Role -> Params -> String
+getInQueue :: Role -> Params -> Text
 getInQueue EnvoyRole   = (! "ENVOY_AMQP_IN_QUEUE")
 getInQueue EmbassyRole = (! "ENVOY_AMQP_OUT_QUEUE")
 
-getOutQueue :: Role -> Params -> String
+getOutQueue :: Role -> Params -> Text
 getOutQueue EnvoyRole   = getInQueue EmbassyRole
 getOutQueue EmbassyRole = getInQueue EnvoyRole
 
@@ -60,7 +62,7 @@ connect role params = do
       exchange   = params ! "ENVOY_AMQP_EXCHANGE"
       bindingKey = params ! "ENVOY_AMQP_BINDING_KEY"
 
-  conn <- openConnection host vhost user password
+  conn <- openConnection (unpack host) vhost user password
   chan <- openChannel conn
 
   void $ declareQueue chan newQueue { queueName = inQueue }
@@ -70,7 +72,7 @@ connect role params = do
                                           , exchangeType = "direct" }
 
   bindQueue chan outQueue exchange bindingKey
-  
+
   queueChan <- newTChanIO
 
   let report = atomically . writeTChan queueChan . readMsg
@@ -84,8 +86,9 @@ connect role params = do
 
   return $ (Queue queueChan (writeTChan outputChan), writer)
 
-readMsg :: Message -> String
-readMsg = BL.unpack . msgBody
+readMsg :: Message -> Text
+readMsg = TL.toStrict . LE.decodeUtf8 . msgBody
 
-makeMsg :: String -> Message
-makeMsg s = newMsg { msgBody = BL.pack s, msgDeliveryMode = Just Persistent }
+makeMsg :: Text -> Message
+makeMsg t = newMsg { msgBody = s, msgDeliveryMode = Just Persistent }
+  where s = LE.encodeUtf8 (TL.fromStrict t)
