@@ -29,9 +29,9 @@ defaults role =
                , ("ENVOY_AMQP_VHOST"       , Just "/")
                , ("ENVOY_AMQP_USER"        , Just "guest")
                , ("ENVOY_AMQP_PASSWORD"    , Just "guest")
-               , ("ENVOY_AMQP_IN_QUEUE"    , Nothing)
-               , ("ENVOY_AMQP_OUT_QUEUE"   , Nothing)
-               , ("ENVOY_AMQP_EXCHANGE"    , Nothing)
+               , ("ENVOY_AMQP_IN_QUEUE"    , Just "envoy-in")
+               , ("ENVOY_AMQP_OUT_QUEUE"   , Just "envoy-out")
+               , ("ENVOY_AMQP_EXCHANGE"    , Just "klatch")
                , ("ENVOY_AMQP_BINDING_KEY" , Just (getBindingKey role)) ]
   
 getBindingKey :: Role -> String
