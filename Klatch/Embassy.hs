@@ -15,7 +15,6 @@ main = do
   writeLog "Your luxurious embassy is being arranged."
   
   startFileLog $ \(fileLog :: FileLog String) olds -> do
-  
     writeLog $ "Replenishing " ++ show (length olds) ++ " events."
     
     (amqp, _) <- startAmqp EmbassyRole
