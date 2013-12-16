@@ -24,6 +24,7 @@ import qualified Data.ByteString         as SB
 import qualified Data.ByteString.Lazy    as BS
 import qualified Data.Text.Lazy          as T
 import qualified Data.Text.Lazy.Encoding as E
+import qualified Data.Map                as Map
 import qualified Pipes.ByteString        as PBS
 import qualified Pipes.Parse             as PP
 import qualified Pipes.Prelude           as P
@@ -46,6 +47,9 @@ contents c = forever $ liftIO (atomically $ readTChan c) >>= yield
 
 ignore :: Monad m => Consumer a m ()
 ignore = for cat (const $ return ())
+
+into :: Monad m => (a -> m ()) -> Consumer a m ()
+into f = for cat (lift . f)
 
 writeToSocket :: Socket -> Input String -> IO ()
 writeToSocket socket input = runEffect $
@@ -108,3 +112,6 @@ onCtrlC m =
   
 sleep :: Int -> IO ()
 sleep = threadDelay . (* 1000000)
+
+onlyJusts :: Ord k => Map.Map k (Maybe v) -> Map.Map k v
+onlyJusts = Map.mapMaybe id

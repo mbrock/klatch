@@ -36,7 +36,8 @@ executable embassy
                  optparse-applicative,
                  hslogger,
                  old-locale,
-                 hscolour
+                 hscolour,
+                 directory
 
 executable envoy
   main-is: Klatch/Envoy.hs
