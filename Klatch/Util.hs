@@ -21,6 +21,7 @@ import Pipes.Network.TCP   (fromSocket, toSocket)
 import System.Locale
 
 import qualified Data.ByteString         as BS
+import qualified Data.ByteString.Lazy    as BSL
 import qualified Data.Map                as Map
 import qualified Data.Text               as T
 import qualified Data.Text.Encoding      as E
@@ -41,7 +42,7 @@ encoder :: ToJSON a => Pipe a T.Text IO ()
 encoder = P.map (TL.toStrict . EL.decodeUtf8 . encode)
 
 decoder :: FromJSON a => Pipe T.Text (Maybe a) IO ()
-decoder = P.map (decodeStrict . E.encodeUtf8)
+decoder = P.map (decode . BSL.fromStrict . E.encodeUtf8)
 
 contents :: TChan a -> Producer a IO ()
 contents c = forever $ liftIO (atomically $ readTChan c) >>= yield
@@ -110,3 +111,10 @@ sleep = threadDelay . (* 1000000)
 
 onlyJusts :: Ord k => Map.Map k (Maybe v) -> Map.Map k v
 onlyJusts = Map.mapMaybe id
+
+skipNothings :: Monad m => Pipe (Maybe a) a m ()
+skipNothings = forever $ do
+  x <- await
+  case x of
+    Nothing -> return ()
+    Just y -> yield y

@@ -20,6 +20,35 @@ instance FromJSON Command where
            return $ Unknown (Just command)
   parseJSON _ = return $ Unknown Nothing
 
+instance ToJSON Command where
+  toJSON (Connect name host port) =
+    object [ "command" .= ("connect" :: Text)
+           , "name" .= name
+           , "host" .= host
+           , "port" .= port ]
+  toJSON (Send name line) =
+    object [ "command" .= ("send" :: Text)
+           , "name" .= name
+           , "line" .= line ]
+
+instance FromJSON Event where
+  parseJSON (Object v) =
+    do event <- v .: "event"
+       withMetadata $
+         case event :: String of
+           "connected" ->
+             ((Connected <$> v .: "name" <*> v .: "host" <*> v .: "port") <*>)
+           "received" ->
+             ((Received <$> v .: "name" <*> v .: "line") <*>)
+           "started" ->
+             (Started <$>)
+           "stopping" ->
+             (Stopping <$>)
+           "error" ->
+             ((Error <$> v .: "name" <*> v .: "description") <*>)
+   where
+     withMetadata = ($ liftA2 (,) (v .: "time") (v .: "version"))
+
 instance ToJSON Event where
   toJSON (Connected name host port (t, v)) =
     object [ "event"                .= ("connected" :: Text)

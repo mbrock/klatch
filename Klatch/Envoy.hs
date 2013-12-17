@@ -3,7 +3,7 @@
 module Main where
 
 import Control.Applicative          ((<$>), (<*>))
-import Control.Concurrent.STM.TChan (TChan, newTChanIO)
+import Control.Concurrent.STM.TChan (newTChanIO, TChan)
 import Control.Concurrent.STM.TVar  (newTVarIO)
 import Control.Monad.IO.Class       (MonadIO, liftIO)
 import Pipes                        (Consumer, cat, for, (>->))
