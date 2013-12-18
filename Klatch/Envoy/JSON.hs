@@ -35,54 +35,55 @@ instance ToJSON Command where
   toJSON Ping =
     object [ "command" .= ("ping" :: Text) ]
 
-instance FromJSON Event where
+instance FromJSON EventWithMetadata where
   parseJSON (Object v) =
     do event <- v .: "event"
        withMetadata $
          case event :: String of
            "connected" ->
-             ((Connected <$> v .: "name" <*> v .: "host" <*> v .: "port") <*>)
+             Connected <$> v .: "name" <*> v .: "host" <*> v .: "port"
            "received" ->
-             ((Received <$> v .: "name" <*> v .: "line") <*>)
+             Received <$> v .: "name" <*> v .: "line"
            "started" ->
-             (Started <$>)
+             return Started
            "stopping" ->
-             (Stopping <$>)
+             return Stopping
            "pong" ->
-             (Pong <$> v .: "count" <*>)
+             Pong <$> v .: "count"
            "error" ->
-             ((Error <$> v .: "name" <*> v .: "description") <*>)
+             Error <$> v .: "name" <*> v .: "description"
    where
-     withMetadata = ($ liftA2 (,) (v .: "time") (v .: "version"))
+     withMetadata x = EventWithMetadata <$>
+       x <*> v .: "time" <*> v .: "version"
 
-instance ToJSON Event where
-  toJSON (Connected name host port (t, v)) =
+instance ToJSON EventWithMetadata where
+  toJSON (EventWithMetadata (Connected name host port) t v) =
     object [ "event"                .= ("connected" :: Text)
            , "time"                 .= t
            , "version"              .= v
            , "name"                 .= name
            , "host"                 .= host
            , "port"                 .= port ]
-  toJSON (Received name line (t, v)) =
+  toJSON (EventWithMetadata (Received name line) t v) =
     object [ "event"                .= ("received" :: Text)
            , "time"                 .= t
            , "version"              .= v
            , "name"                 .= name
            , "line"                 .= line ]
-  toJSON (Started (t, v)) =
+  toJSON (EventWithMetadata (Started) t v) =
     object [ "event"                .= ("started" :: Text)
            , "time"                 .= t
            , "version"              .= v ]
-  toJSON (Stopping (t, v)) =
+  toJSON (EventWithMetadata (Stopping) t v) =
     object [ "event"                .= ("stopping" :: Text)
            , "time"                 .= t
            , "version"              .= v ]
-  toJSON (Pong n (t, v)) =
+  toJSON (EventWithMetadata (Pong n) t v) =
     object [ "event"                .= ("pong" :: Text)
            , "count"                .= n
            , "time"                 .= t
            , "version"              .= v ]
-  toJSON (Error name description (t, v)) =
+  toJSON (EventWithMetadata (Error name description) t v) =
     object [ "event"                .= ("error" :: Text)
            , "time"                 .= t
            , "version"              .= v

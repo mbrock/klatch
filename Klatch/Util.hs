@@ -2,6 +2,8 @@
 
 module Klatch.Util where
 
+import Klatch.Envoy.Types
+
 import Control.Applicative ((<$>))
 import Control.Arrow       ((***))
 import Control.Concurrent  (threadDelay)
@@ -68,7 +70,7 @@ fromUTF8 :: BS.ByteString -> T.Text
 fromUTF8 = E.decodeUtf8
 
 getPOSIXMsecs :: IO Int
-getPOSIXMsecs = fmap ((`div` 1000000000) . fromEnum) getPOSIXTime
+getPOSIXMsecs = fmap (truncate . (* 1000) . toRational) getPOSIXTime
 
 printIndentedList :: Int -> [String] -> IO ()
 printIndentedList n xs = forM_ xs (putStrLn . (replicate n ' ' ++))
@@ -92,6 +94,10 @@ formatLogLine :: (Functor m, MonadIO m) => String -> m String
 formatLogLine x =
   do t <- formatTime defaultTimeLocale "%c" <$> liftIO getCurrentTime
      return (dimmed t ++ "\n  " ++ x ++ "\n")
+
+formatTimestamp :: Timestamp -> String
+formatTimestamp x = formatTime defaultTimeLocale "%c"
+  (posixSecondsToUTCTime (fromIntegral (x `div` 1000) :: NominalDiffTime))
 
 writeLog :: MonadIO m => String -> m ()
 writeLog x = liftIO $ formatLogLine x >>= putStrLn

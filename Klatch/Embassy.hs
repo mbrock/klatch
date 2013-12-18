@@ -4,7 +4,7 @@ module Main where
 
 import Control.Concurrent.STM       (atomically)
 import Control.Concurrent.STM.TChan (TChan, newTChanIO, writeTChan)
-import Control.Monad                (forever)
+import Control.Monad                (forever, when)
 import Control.Monad.IO.Class       (liftIO)
 import Data.Aeson                   (Value)
 import Data.Text                    (Text)
@@ -16,7 +16,7 @@ import Klatch.Embassy.FileLog
 import Klatch.Envoy.AMQP
 import Klatch.Envoy.Queue
 import Klatch.Envoy.JSON ()
-import Klatch.Envoy.Types (Event (..), Command (..))
+import Klatch.Envoy.Types (EventWithMetadata (..), Event (..), Command (..))
 import Klatch.Util
 
 main :: IO ()
@@ -24,9 +24,13 @@ main = do
   newline
   writeLog "Your luxurious embassy is being arranged for visitors."
 
-  startFileLog $ \(fileLog :: FileLog Event) olds -> do
+  startFileLog $ \fileLog (olds :: [EventWithMetadata]) -> do
     writeLog $ "Perusing the embassy archives, " ++ show (length olds)
                ++ " past moments are recalled..."
+
+    when (not $ null olds) $
+      writeLog $ "The archives go back to " ++
+                 (bolded . formatTimestamp . eventTimestamp $ last olds) ++ "."
 
     (amqp, _) <- startAmqp EmbassyRole
 
@@ -39,24 +43,26 @@ main = do
 
     runEffectsConcurrently
        (readFrom amqp
-        >-> (decoder :: Pipe Text (Maybe Event) IO ())
+        >-> (decoder :: Pipe Text (Maybe EventWithMetadata) IO ())
         >-> loggingReads
         >-> skipNothings
         >-> doHandshake commandQueue
         >-> into (writeToLog fileLog))
        (contents commandQueue
         >-> encoder
+        >-> loggingWrites
         >-> writeTo amqp)
 
-doHandshake :: TChan Command -> Pipe Event Event IO ()
+doHandshake :: TChan Command -> Pipe EventWithMetadata EventWithMetadata IO ()
 doHandshake commandQueue = do
-  writeLog $ "Rabbit, please see if you can find the envoys."
   liftIO . atomically $ writeTChan commandQueue Ping
 
-  awaitOnce $ \x -> case x of
-                      Pong n _ ->
+  writeLog "Waiting for the envoys to report.  Going through old mail..."
+
+  awaitOnce $ \x -> case eventData x of
+                      Pong n ->
                         Just . writeLog $
-                          "Okay. The envoys are connected to "
+                          "Okay.  The envoys are connected to "
                           ++ plural n "server" ++ "."
                       _ -> Nothing
 

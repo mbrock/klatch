@@ -21,17 +21,20 @@ readFrom Queue { input } = contents input
 writeTo :: Queue -> Consumer Text IO ()
 writeTo Queue { output } = for cat (liftIO . atomically . output)
 
-writeException :: (Functor m, MonadIO m) => Text -> TChan Event
+writeException :: (Functor m, MonadIO m) => Text -> TChan EventWithMetadata
                -> IOException -> m ()
 writeException name channel = writeError name channel . pack . show
 
-writeError :: (Functor m, MonadIO m) => Text -> TChan Event -> Text -> m ()
+writeError :: (Functor m, MonadIO m) => Text -> TChan EventWithMetadata -> Text -> m ()
 writeError name channel = writeEvent channel . Error name
 
 timestamped :: (Functor m, MonadIO m) => (Timestamp -> a) -> m a
 timestamped = (<$> liftIO getPOSIXMsecs)
 
-writeEvent :: (Functor m, MonadIO m) => TChan a -> (EventMetadata -> a) -> m ()
-writeEvent c f = do
+writeEvent :: (Functor m, MonadIO m) => TChan EventWithMetadata -> Event -> m ()
+writeEvent c e = do
   timestamp <- liftIO getPOSIXMsecs
-  liftIO . atomically . writeTChan c $ f (timestamp, envoyVersion)
+  liftIO . atomically . writeTChan c $
+    EventWithMetadata { eventData = e
+                      , eventTimestamp = timestamp
+                      , version = envoyVersion }

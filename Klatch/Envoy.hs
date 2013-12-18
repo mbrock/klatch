@@ -41,7 +41,7 @@ main = do
     (contents channel >-> loggingWrites >-> encoder      >-> writeTo amqp)
     (readFrom amqp    >-> decoder       >-> loggingReads >-> handler state)
 
-type State = (Fleet, TChan Event)
+type State = (Fleet, TChan EventWithMetadata)
 
 initialize :: IO State
 initialize = (,) <$> (newTVarIO Map.empty) <*> newTChanIO
@@ -59,7 +59,7 @@ handle (f, c) (Just cmd) =
     Unknown (Just s)       -> writeError "" c (T.append "Unknown command " s)
     Unknown Nothing        -> writeError "" c "Unreadable command"
 
-handlePing :: Fleet -> (TChan Event) -> IO ()
+handlePing :: Fleet -> (TChan EventWithMetadata) -> IO ()
 handlePing f c = do
   n <- Map.size <$> atomically (readTVar f)
   writeEvent c (Pong n)

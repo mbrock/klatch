@@ -20,13 +20,19 @@ data Command = Connect  Text Text Text
 
 type EventMetadata = (Timestamp, Int)
 
-data Event = Connected  Text Text Text EventMetadata
-           | Received   Text Text      EventMetadata
-           | Error      Text Text      EventMetadata
-           | Started                   EventMetadata
-           | Stopping                  EventMetadata
-           | Pong       Int            EventMetadata
+data Event = Connected  Text Text Text
+           | Received   Text Text
+           | Error      Text Text
+           | Started
+           | Stopping
+           | Pong       Int
              deriving (Eq, Show, Generic)
+
+data EventWithMetadata = EventWithMetadata
+  { eventData :: Event
+  , eventTimestamp :: Timestamp
+  , version :: Int }
+    deriving (Eq, Show, Generic)
 
 newtype Envoy = Envoy { sendTo :: Text -> IO () }
 
