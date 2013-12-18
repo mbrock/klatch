@@ -16,6 +16,8 @@ instance FromJSON Command where
            Connect <$> v .: "name" <*> v .: "host" <*> v .: "port"
          "send" ->
            Send <$> v .: "name" <*> v .: "line"
+         "ping" ->
+           return Ping
          _ ->
            return $ Unknown (Just command)
   parseJSON _ = return $ Unknown Nothing
@@ -30,6 +32,8 @@ instance ToJSON Command where
     object [ "command" .= ("send" :: Text)
            , "name" .= name
            , "line" .= line ]
+  toJSON Ping =
+    object [ "command" .= ("ping" :: Text) ]
 
 instance FromJSON Event where
   parseJSON (Object v) =
@@ -44,6 +48,8 @@ instance FromJSON Event where
              (Started <$>)
            "stopping" ->
              (Stopping <$>)
+           "pong" ->
+             (Pong <$> v .: "count" <*>)
            "error" ->
              ((Error <$> v .: "name" <*> v .: "description") <*>)
    where
@@ -69,6 +75,11 @@ instance ToJSON Event where
            , "version"              .= v ]
   toJSON (Stopping (t, v)) =
     object [ "event"                .= ("stopping" :: Text)
+           , "time"                 .= t
+           , "version"              .= v ]
+  toJSON (Pong n (t, v)) =
+    object [ "event"                .= ("pong" :: Text)
+           , "count"                .= n
            , "time"                 .= t
            , "version"              .= v ]
   toJSON (Error name description (t, v)) =

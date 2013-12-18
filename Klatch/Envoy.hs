@@ -3,8 +3,9 @@
 module Main where
 
 import Control.Applicative          ((<$>), (<*>))
+import Control.Concurrent.STM       (atomically)
 import Control.Concurrent.STM.TChan (newTChanIO, TChan)
-import Control.Concurrent.STM.TVar  (newTVarIO)
+import Control.Concurrent.STM.TVar  (newTVarIO, readTVar)
 import Control.Monad.IO.Class       (MonadIO, liftIO)
 import Pipes                        (Consumer, cat, for, (>->))
 
@@ -54,6 +55,11 @@ handle (f, c) (Just cmd) =
   case cmd of
     Connect name host port -> handleConnect f c name host port
     Send name line         -> handleSend f c name line
+    Ping                   -> handlePing f c
     Unknown (Just s)       -> writeError "" c (T.append "Unknown command " s)
     Unknown Nothing        -> writeError "" c "Unreadable command"
 
+handlePing :: Fleet -> (TChan Event) -> IO ()
+handlePing f c = do
+  n <- Map.size <$> atomically (readTVar f)
+  writeEvent c (Pong n)

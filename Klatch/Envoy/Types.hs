@@ -14,6 +14,7 @@ type Timestamp = Int
 
 data Command = Connect  Text Text Text
              | Send     Text Text
+             | Ping
              | Unknown  (Maybe Text)
                deriving (Eq, Show, Generic)
 
@@ -24,6 +25,7 @@ data Event = Connected  Text Text Text EventMetadata
            | Error      Text Text      EventMetadata
            | Started                   EventMetadata
            | Stopping                  EventMetadata
+           | Pong       Int            EventMetadata
              deriving (Eq, Show, Generic)
 
 newtype Envoy = Envoy { sendTo :: Text -> IO () }

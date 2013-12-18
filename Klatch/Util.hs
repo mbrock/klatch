@@ -93,8 +93,8 @@ formatLogLine x =
   do t <- formatTime defaultTimeLocale "%c" <$> liftIO getCurrentTime
      return (dimmed t ++ "\n  " ++ x ++ "\n")
 
-writeLog :: String -> IO ()
-writeLog x = formatLogLine x >>= putStrLn
+writeLog :: MonadIO m => String -> m ()
+writeLog x = liftIO $ formatLogLine x >>= putStrLn
 
 dimmed :: String -> String
 dimmed = highlight [Dim]
@@ -118,3 +118,20 @@ skipNothings = forever $ do
   case x of
     Nothing -> return ()
     Just y -> yield y
+
+plural :: Int -> String -> String
+plural 0 s = "no " ++ s ++ "s"
+plural 1 s = "one " ++ s
+plural x s | x <= length countingWords = countingWords !! x ++ s ++ "s"
+plural x s = show x ++ s ++ "s"
+
+countingWords :: [String]
+countingWords = ["", "", "two", "three", "four", "five", "six", "seven"]
+
+continue :: Monad m => Pipe a a m ()
+continue = for cat yield
+
+awaitOnce :: Monad m => (a -> Maybe (Pipe a a m ())) -> Pipe a a m ()
+awaitOnce f = forever $ await >>= \x -> case f x of
+                                          Just m  -> m >> continue
+                                          Nothing -> yield x
