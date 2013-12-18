@@ -1,11 +1,4 @@
-Things to do with Klatch
-
-* klatch-envoy
-
-** Maintain a set of IRC connections
-
-** Accepts commands from queue
-*** connect
-*** send
-
-** Logs IRC lines to queue
+* TODO Use one thread for stdout logging
+* TODO Parse IRC
+* TODO Respond to PING
+* TODO Stream events/commands to/from JavaScript
