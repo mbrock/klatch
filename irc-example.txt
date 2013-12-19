@@ -1,0 +1,66 @@
+NOTICE AUTH :*** Processing connection to irc.swepipe.se
+NOTICE AUTH :*** Looking up your hostname...
+NOTICE AUTH :*** Checking Ident
+NOTICE AUTH :*** No Ident response
+NOTICE AUTH :*** Found your hostname
+PING :52F5F4DE
+:irc.swepipe.se 001 klatch :Welcome to the EFnet Internet Relay Chat Network klatch
+:irc.swepipe.se 002 klatch :Your host is irc.swepipe.se[88.80.5.41/6667], running version ircd-ratbox-3.0.7
+:irc.swepipe.se 003 klatch :This server was created Tue Aug 7 2012 at 01:46:37 CEST
+:irc.swepipe.se 004 klatch irc.swepipe.se ircd-ratbox-3.0.7 oiwszcrkfydnxbauglZCD biklmnopstveIrS bkloveI
+:irc.swepipe.se 005 klatch CHANTYPES=&# EXCEPTS INVEX CHANMODES=eIb,k,l,imnpstS CHANLIMIT=&#:30 PREFIX=(ov)@+ MAXLIST=beI:100 MODES=4 NETWORK=EFnet KNOCK STATUSMSG=@+ CALLERID=g :are supported by this server
+:irc.swepipe.se 005 klatch SAFELIST ELIST=U CASEMAPPING=rfc1459 CHARSET=ascii NICKLEN=9 CHANNELLEN=50 TOPICLEN=160 ETRACE CPRIVMSG CNOTICE DEAF=D MONITOR=60 :are supported by this server
+:irc.swepipe.se 005 klatch FNC TARGMAX=NAMES:1,LIST:1,KICK:1,WHOIS:1,PRIVMSG:4,NOTICE:4,ACCEPT:,MONITOR: :are supported by this server
+:irc.swepipe.se 251 klatch :There are 8005 users and 22869 invisible on 36 servers
+:irc.swepipe.se 252 klatch 192 :IRC Operators online
+:irc.swepipe.se 253 klatch 1 :unknown connection(s)
+:irc.swepipe.se 254 klatch 15188 :channels formed
+:irc.swepipe.se 255 klatch :I have 1041 clients and 1 servers
+:irc.swepipe.se 265 klatch 1041 1148 :Current local users 1041, max 1148
+:irc.swepipe.se 266 klatch 30874 35204 :Current global users 30874, max 35204
+:irc.swepipe.se 250 klatch :Highest connection count: 1149 (1148 clients) (150923 connections received)
+:irc.swepipe.se 375 klatch :- irc.swepipe.se Message of the Day -
+:irc.swepipe.se 372 klatch :- He jacked in.
+:irc.swepipe.se 372 klatch :-
+:irc.swepipe.se 372 klatch :- Nothing. Gray void. No matrix, no grid. No cyberspace.
+:irc.swepipe.se 372 klatch :- The deck was gone. His fingers were. . .
+:irc.swepipe.se 372 klatch :- And on the far rim of consciousness, a scurrying, a fleeting
+:irc.swepipe.se 372 klatch :- impression of something rushing toward him, across leagues
+:irc.swepipe.se 372 klatch :- of black mirror.
+:irc.swepipe.se 372 klatch :- He tried to scream.
+:irc.swepipe.se 372 klatch :-                            -- Neuromancer, by William Gibson
+:irc.swepipe.se 372 klatch :-
+:irc.swepipe.se 372 klatch :- welcome to...
+:irc.swepipe.se 372 klatch :-           _____ _   _________       ________
+:irc.swepipe.se 372 klatch :-   ________\___ : \__\___  ,_ \______\___    \
+:irc.swepipe.se 372 klatch :-   \___     \   |  \    \ ____/___   ,_ \  :__\
+:irc.swepipe.se 372 klatch :-     /   \___\  '   \ :__\  \   /   ____/  `  /
+:irc.swepipe.se 372 klatch :-    /   ,     \ _   / `  /  /  /  /   \  ____/
+:irc.swepipe.se 372 klatch :-    \___\__   /__\_/  __/__/   \_/__  /___/
+:irc.swepipe.se 372 klatch :-         \___/    \___/    \____/ \__/
+:irc.swepipe.se 372 klatch :-  i r c.       s w e p i p e               .se
+:irc.swepipe.se 372 klatch :-
+:irc.swepipe.se 372 klatch :-
+:irc.swepipe.se 372 klatch :-          hosted by PRQ AB - www.prq.se
+:irc.swepipe.se 372 klatch :-         "lightning never strikes twice"
+:irc.swepipe.se 372 klatch :-
+:irc.swepipe.se 372 klatch :-         co-location - dedicated servers
+:irc.swepipe.se 372 klatch :-          webhosting - privacy services
+:irc.swepipe.se 372 klatch :-       freedom of speech - freedom of press
+:irc.swepipe.se 372 klatch :-   freedom of association - freedom of commerce
+:irc.swepipe.se 372 klatch :-
+:irc.swepipe.se 372 klatch :-   We offer SSL on port 6697.
+:irc.swepipe.se 376 klatch :End of /MOTD command.
+:klatch MODE klatch :+i
+klatch!~klatch@095-097-149-101.static.chello.nl JOIN :#irc
+:irc.swepipe.se 332 klatch #irc :<valleri> sometimes ya gotta take the law into your own hands
+:irc.swepipe.se 333 klatch #irc beginner!md5@2001:470:f008:20::2 1364602247
+:irc.swepipe.se 353 klatch = #irc :klatch remote @Uvqisydw AndroidVa @kb @a @modulate Wildblue @trance @kitten @pcpcxwbhf @sloane @eva @Xotwr @suid @glass Hexeon Rikairchy bigfoot @^ revert con @china @santa @learn @master @elite @bitch @whore @bitchx @control @t @_ @packets @Preznix @physics danny hive-mind @phone @chemistry @chatter @packet @dense @md5 @b @bipolar TaylorSwi @p @[ lul @] @u @j @k @c @v @i @r @n @d @dalek @cccp @iso @god @\ @admin @hacker @emily @m @britney @irc chrono @isp @agent
+:irc.swepipe.se 353 klatch = #irc :@fuck @hivemind @evagreen @o @h god_ @l beginner @s @y @internic @f @tcpdump @princess @g @z @e
+:irc.swepipe.se 366 klatch #irc :End of /NAMES list.
+:evagreen!~eva@202.103.111.17 MODE #irc +l 101
+:irc.swepipe.se 311 klatch klatch ~klatch 095-097-149-101.static.chello.nl * : Klatch
+:irc.swepipe.se 319 klatch klatch :#irc
+:irc.swepipe.se 312 klatch klatch irc.swepipe.se :Another visitor. Stay a while. Stay FOREVER...
+:irc.swepipe.se 317 klatch klatch 46 1387474358 :seconds idle, signon time
+:irc.swepipe.se 318 klatch klatch :End of /WHOIS list.

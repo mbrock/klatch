@@ -38,7 +38,8 @@ executable embassy
                  old-locale,
                  hscolour,
                  directory,
-                 irc-bytestring
+                 irc-bytestring,
+                 attoparsec
 
 executable envoy
   main-is: Klatch/Envoy.hs

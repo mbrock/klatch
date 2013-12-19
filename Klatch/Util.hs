@@ -11,11 +11,13 @@ import Control.Concurrent.Async
 import Control.Concurrent.STM.TChan
 import Control.Monad
 import Control.Monad.STM
+import Data.Attoparsec.ByteString (IResult (..))
 import Data.Aeson
 import Data.Time.Clock
 import Data.Time.Clock.POSIX
 import Data.Time.Format
 import Language.Haskell.HsColour.ANSI
+import Network.IRC.ByteString.Parser
 import Network.Simple.TCP  (Socket)
 import Pipes
 import Pipes.Concurrent    (Output, Input, Buffer (Unbounded), spawn, fromInput)
@@ -141,3 +143,9 @@ awaitOnce :: Monad m => (a -> Maybe (Pipe a a m ())) -> Pipe a a m ()
 awaitOnce f = forever $ await >>= \x -> case f x of
                                           Just m  -> m >> continue
                                           Nothing -> yield x
+
+parseIRCLine :: T.Text -> Maybe IRCMsg
+parseIRCLine line =
+  case toIRCMsg . toUTF8 $ T.append line "\r\n" of
+    Done _ r -> Just r
+    _ -> Nothing

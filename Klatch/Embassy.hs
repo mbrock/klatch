@@ -4,13 +4,12 @@ module Main where
 
 import Control.Concurrent.STM       (atomically)
 import Control.Concurrent.STM.TChan (TChan, newTChanIO, writeTChan)
-import Control.Monad                (forever, when)
+import Control.Monad                (forever, when, mplus)
 import Control.Monad.IO.Class       (liftIO)
 import Data.Aeson                   (Value)
 import Data.Text                    (Text)
-import Network.IRC.ByteString.Parser
 import Pipes                        (Pipe, runEffect, (>->), cat,
-                                     for, await, yield)
+                                     for, await, yield, each)
 
 import Klatch.Embassy.FileLog
 import Klatch.Envoy.AMQP
@@ -25,12 +24,11 @@ main = do
   writeLog "Your luxurious embassy is being arranged for visitors."
 
   startFileLog $ \fileLog (olds :: [EventWithMetadata]) -> do
-    writeLog $ "Perusing the embassy archives, " ++ show (length olds)
-               ++ " past moments are recalled..."
-
     when (not $ null olds) $
+      writeLog $ "Perusing the embassy archives, " ++ show (length olds)
+                 ++ " past moments are recalled..."
       writeLog $ "The archives go back to " ++
-                 (bolded . formatTimestamp . eventTimestamp $ last olds) ++ "."
+                 (bolded . formatTimestamp . eventTimestamp $ head olds) ++ "."
 
     (amqp, _) <- startAmqp EmbassyRole
 
@@ -42,16 +40,17 @@ main = do
     commandQueue <- newTChanIO
 
     runEffectsConcurrently
-       (readFrom amqp
-        >-> (decoder :: Pipe Text (Maybe EventWithMetadata) IO ())
-        >-> loggingReads
-        >-> skipNothings
+       ((each olds `mplus` (readFrom amqp >-> decoder >-> skipNothings))
         >-> doHandshake commandQueue
+        >-> loggingIrcMsgs
         >-> into (writeToLog fileLog))
        (contents commandQueue
         >-> encoder
         >-> loggingWrites
         >-> writeTo amqp)
+
+eventDecoder :: Pipe Text (Maybe EventWithMetadata) IO ()
+eventDecoder = decoder
 
 doHandshake :: TChan Command -> Pipe EventWithMetadata EventWithMetadata IO ()
 doHandshake commandQueue = do
@@ -67,3 +66,15 @@ doHandshake commandQueue = do
                       _ -> Nothing
 
   continue
+
+loggingIrcMsgs :: Pipe EventWithMetadata EventWithMetadata IO ()
+loggingIrcMsgs = forever $ do
+  x <- await
+
+  case eventData x of
+    Received name line ->
+      writeLog $ bolded "IRC: " ++ show (parseIRCLine line)
+    _ ->
+      return ()
+
+  yield x

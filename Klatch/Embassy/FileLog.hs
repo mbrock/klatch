@@ -32,7 +32,7 @@ makeLog path = do
 
   let fileLog = FileLog $ \x -> addToLog xs x >>= BS.writeFile path . encode
 
-  return (fileLog, old)
+  return (fileLog, reverse old)
 
 createOrRead :: (FromJSON a, ToJSON a) => String -> a -> IO a
 createOrRead path x = do
