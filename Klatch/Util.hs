@@ -51,11 +51,14 @@ decoder = P.map (decode . BSL.fromStrict . E.encodeUtf8)
 contents :: TChan a -> Producer a IO ()
 contents c = forever $ liftIO (atomically $ readTChan c) >>= yield
 
+toChannel :: TChan a -> Consumer a IO ()
+toChannel c = for cat (liftIO . atomically . writeTChan c)
+
 ignore :: Monad m => Consumer a m ()
 ignore = for cat (const $ return ())
 
-into :: Monad m => (a -> m ()) -> Consumer a m ()
-into f = for cat (lift . f)
+into :: Monad m => (a -> m ()) -> Pipe a a m ()
+into f = for cat (\x -> lift (f x) >> yield x)
 
 writeToSocket :: Socket -> Input T.Text -> IO ()
 writeToSocket socket input = runEffect $

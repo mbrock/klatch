@@ -39,7 +39,13 @@ executable embassy
                  hscolour,
                  directory,
                  irc-bytestring,
-                 attoparsec
+                 attoparsec,
+                 warp,
+                 wai,
+                 wai-extra,
+                 wai-eventsource,
+                 http-types,
+                 blaze-builder
 
 executable envoy
   main-is: Klatch/Envoy.hs
@@ -69,4 +75,6 @@ executable envoy
                  optparse-applicative,
                  hslogger,
                  old-locale,
-                 hscolour
+                 hscolour,
+                 irc-bytestring,
+                 attoparsec
