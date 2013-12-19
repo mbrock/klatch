@@ -14,6 +14,7 @@ import Data.Aeson                          (encode)
 import Data.ByteString.Lazy                (ByteString)
 import Network.Wai.EventSource
 import Network.Wai.Middleware.Gzip         (gzip, def)
+import Network.Wai.Middleware.Static       (staticPolicy, noDots)
 
 import qualified Data.Conduit as C
 import qualified Network.Wai.Handler.Warp as Warp
@@ -27,7 +28,10 @@ url = "http://localhost:" ++ show port ++ "/"
 run :: MonadIO m => TChan ParsedEvent -> m ()
 run c = liftIO $ do
   writeLog $ "Starting web server on " ++ bolded url
-  Warp.run port . gzip def . eventSourceAppSource $ stream c
+  Warp.run port
+    . gzip def
+    . staticPolicy noDots
+    . eventSourceAppSource $ stream c
 
 stream :: TChan ParsedEvent -> C.Source IO ServerEvent
 stream c = do

@@ -1,0 +1,16 @@
+body {
+  font-family: "Anonymous Pro", monospace;
+  background-color: #f6f6f6;
+}
+
+section {
+  width: 60em;
+  margin: 0 auto;
+}
+
+#log > li {
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+  width: 50em;
+}
