@@ -17,7 +17,6 @@ import Pipes.Concurrent             (Output, send)
 import qualified Data.Map  as Map
 import qualified Data.Text as T
 
-import Klatch.Envoy.JSON ()
 import Klatch.Envoy.Queue
 import Klatch.Envoy.Types
 import Klatch.Util

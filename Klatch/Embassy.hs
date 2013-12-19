@@ -4,18 +4,14 @@ module Main where
 
 import Control.Concurrent.Async      (async, link)
 import Control.Concurrent.STM        (atomically)
-import Control.Concurrent.STM.TChan  (TChan, newTChanIO, writeTChan)
-import Control.Monad                 (forever, when, mplus)
+import Control.Concurrent.STM.TChan
+import Control.Monad                 (forever, when)
 import Control.Monad.IO.Class        (liftIO)
-import Data.Aeson                    (Value)
 import Data.Text                     (Text)
-import Network.IRC.ByteString.Parser (IRCMsg)
-import Pipes                         (Pipe, runEffect, (>->), cat,
-                                      for, await, yield, each)
+import Pipes                         (Pipe, (>->), await, yield, each)
 
 import Klatch.Embassy.FileLog
 import Klatch.Envoy.AMQP
-import Klatch.Envoy.JSON ()
 import Klatch.Envoy.Queue
 import Klatch.Envoy.Types
 import Klatch.Util
@@ -47,14 +43,12 @@ main = do
     async (Klatch.Embassy.HTTP.run eventQueue) >>= link
 
     runEffectsConcurrently
-       ((each olds >> (readFrom amqp >-> decodingIrcMsgs commandQueue))
-        >-> loggingReads
-        >-> into (writeToLog fileLog)
+       (contents commandQueue >-> encoder >-> writeTo amqp)
+       ((each olds >> (readFrom amqp
+                       >-> decodingIrcMsgs commandQueue
+                       >-> loggingReads
+                       >-> into (writeToLog fileLog)))
         >-> toChannel eventQueue)
-       (contents commandQueue
-        >-> encoder
-        >-> loggingWrites
-        >-> writeTo amqp)
 
 doHandshake :: TChan Command -> Pipe RawEvent RawEvent IO ()
 doHandshake commandQueue = do

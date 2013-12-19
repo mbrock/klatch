@@ -1,12 +1,14 @@
-{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveGeneric, TemplateHaskell #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Klatch.Envoy.Types where
 
 import Control.Concurrent.STM.TVar   (TVar)
+import Data.Aeson.TH
 import Data.Map                      (Map)
 import Data.Text                     (Text)
 import GHC.Generics                  (Generic)
-import Network.IRC.ByteString.Parser (IRCMsg)
+import Network.IRC.ByteString.Parser (IRCMsg, UserInfo)
 
 envoyVersion :: Int
 envoyVersion = 1
@@ -41,3 +43,9 @@ type RawEvent    = EventWithMetadata Text
 newtype Envoy = Envoy { sendTo :: Text -> IO () }
 
 type Fleet = TVar (Map Text Envoy)
+
+$(deriveJSON defaultOptions ''Command)
+$(deriveJSON defaultOptions ''Event)
+$(deriveJSON defaultOptions ''EventWithMetadata)
+$(deriveJSON defaultOptions ''UserInfo)
+$(deriveJSON defaultOptions ''IRCMsg)

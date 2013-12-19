@@ -13,7 +13,6 @@ import qualified Data.Map  as Map
 import qualified Data.Text as T
 
 import Klatch.Envoy.AMQP   (Role (EnvoyRole), startAmqp)
-import Klatch.Envoy.JSON   ()
 import Klatch.Envoy.Queue  (writeTo, readFrom, writeEvent, writeError)
 import Klatch.Envoy.Socket (handleConnect, handleSend)
 import Klatch.Envoy.Types

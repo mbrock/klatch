@@ -45,7 +45,8 @@ executable embassy
                  wai-extra,
                  wai-eventsource,
                  http-types,
-                 blaze-builder
+                 blaze-builder,
+                 conduit
 
 executable envoy
   main-is: Klatch/Envoy.hs
