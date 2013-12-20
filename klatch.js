@@ -1,14 +1,30 @@
 /** @jsx React.DOM */
-/*   -*- js2 -*-   */
 
 (function () {
-  var MessageLog = React.createClass({
+  var Viewer = React.createClass({
     getInitialState: function () {
-      return { messages: [] };
+      return { replaying: 0, messages: [] };
     },
 
     render: function () {
-      var messages = this.state.messages.map(function (message) {
+      if (this.state.replaying > 0)
+        return <Replaying count={this.state.replaying} />;
+      else
+        return <MessageLog messages={this.state.messages} />;
+    },
+
+    recordMessage: function (message) {
+      var messages = this.state.messages.concat([message]);
+      this.setState({
+        messages: messages,
+        replaying: --this.state.replaying
+      });
+    }
+  });
+
+  var MessageLog = React.createClass({
+    render: function () {
+      var messages = this.props.messages.map(function (message) {
         if (message.payload.tag === "Received")
           return <IRCMessage message={message} key={message.sequence} />;
         else
@@ -16,11 +32,16 @@
       });
 
       return (<div> {messages} </div>);
-    },
+    }
+  });
 
-    recordMessage: function (message) {
-      var messages = this.state.messages.concat([message]);
-      this.setState({ messages: messages });
+  var Replaying = React.createClass({
+    render: function () {
+      return (
+        <span className="replaying"
+          Replaying {this.props.count} events...
+        </span>
+      );
     }
   });
 
@@ -73,13 +94,13 @@
     }
   });
 
-  var messageLog = <MessageLog />;
+  var viewer = <Viewer />;
 
   var source = new EventSource("/");
   source.onmessage = function (e) {
     var data = JSON.parse(e.data);
-    messageLog.recordMessage(data);
+    viewer.recordMessage(data);
   };
 
-  React.renderComponent(messageLog, log);
+  React.renderComponent(viewer, log);
 })();
