@@ -11,8 +11,8 @@ import qualified Data.ByteString.Lazy as BS
 import qualified Data.Text            as T
 import qualified Data.Map             as Map
 
-import Klatch.Params
-import Klatch.Util (writeLog, bolded)
+import Klatch.Common.Params
+import Klatch.Common.Util (writeLog, bolded)
 
 newtype (FromJSON a, ToJSON a) => FileLog a =
   FileLog { writeToLog :: a -> IO () }

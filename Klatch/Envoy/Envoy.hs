@@ -12,11 +12,11 @@ import Pipes                        (Consumer, cat, for, (>->))
 import qualified Data.Map  as Map
 import qualified Data.Text as T
 
-import Klatch.Envoy.AMQP   (Role (EnvoyRole), startAmqp)
+import Klatch.Common.AMQP   (Role (EnvoyRole), startAmqp)
 import Klatch.Envoy.Queue  (writeTo, readFrom, writeEvent, writeError)
 import Klatch.Envoy.Socket (handleConnect, handleSend)
-import Klatch.Envoy.Types
-import Klatch.Util         (runEffectsConcurrently, contents, newline,
+import Klatch.Common.Types
+import Klatch.Common.Util         (runEffectsConcurrently, contents, newline,
                             loggingWrites, loggingReads, encoder, decoder,
                             onCtrlC, writeLog, bolded)
 

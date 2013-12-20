@@ -18,8 +18,8 @@ import qualified Data.Map  as Map
 import qualified Data.Text as T
 
 import Klatch.Envoy.Queue
-import Klatch.Envoy.Types
-import Klatch.Util
+import Klatch.Common.Types
+import Klatch.Common.Util
 
 handleConnect :: Fleet -> TChan RawEvent -> Text -> Text -> Text -> IO ()
 handleConnect fleet channel name host port =

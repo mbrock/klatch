@@ -10,8 +10,8 @@ import Data.Text              (Text, pack)
 import Pipes                  (Producer, Consumer, for, cat)
 import Prelude         hiding (sequence)
 
-import Klatch.Envoy.Types
-import Klatch.Util (contents, getPOSIXMsecs)
+import Klatch.Common.Types
+import Klatch.Common.Util (contents, getPOSIXMsecs)
 
 data Queue = Queue { input  :: TChan Text
                    , output :: Text -> STM () }

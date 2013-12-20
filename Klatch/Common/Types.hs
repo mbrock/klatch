@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveGeneric, TemplateHaskell #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module Klatch.Envoy.Types where
+module Klatch.Common.Types where
 
 import Control.Concurrent.STM.TVar   (TVar)
 import Data.Aeson.TH

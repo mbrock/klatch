@@ -1,8 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Klatch.Util where
+module Klatch.Common.Util where
 
-import Klatch.Envoy.Types
+import Klatch.Common.Types
 
 import Control.Applicative ((<$>))
 import Control.Arrow       ((***))

@@ -1,10 +1,10 @@
 {-# LANGUAGE TupleSections, OverloadedStrings #-}
 
-module Klatch.Envoy.AMQP (startAmqp, Role (EnvoyRole, EmbassyRole)) where
+module Klatch.Common.AMQP (startAmqp, Role (EnvoyRole, EmbassyRole)) where
 
 import Klatch.Envoy.Queue
-import Klatch.Params
-import Klatch.Util
+import Klatch.Common.Params
+import Klatch.Common.Util
 
 import Control.Concurrent.Async     (Async, async)
 import Control.Concurrent.STM       (atomically)

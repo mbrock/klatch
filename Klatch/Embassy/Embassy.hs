@@ -14,10 +14,10 @@ import Pipes                         (Pipe, Producer, (>->),
 import Prelude                hiding (sequence)
 
 import Klatch.Embassy.FileLog
-import Klatch.Envoy.AMQP
+import Klatch.Common.AMQP
 import Klatch.Envoy.Queue
-import Klatch.Envoy.Types
-import Klatch.Util
+import Klatch.Common.Types
+import Klatch.Common.Util
 
 import qualified Klatch.Embassy.HTTP
 

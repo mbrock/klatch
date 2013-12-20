@@ -9,7 +9,7 @@ build-type: Simple
 cabal-version: >=1.8
 
 executable embassy
-  main-is: Klatch/Embassy.hs
+  main-is: Klatch/Embassy/Embassy.hs
   ghc-options: -Wall
   build-depends: base,
                  transformers,
@@ -50,7 +50,7 @@ executable embassy
                  wai-middleware-static
 
 executable envoy
-  main-is: Klatch/Envoy.hs
+  main-is: Klatch/Envoy/Envoy.hs
   ghc-options: -Wall
   build-depends: base,
                  transformers,

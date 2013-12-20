@@ -2,8 +2,8 @@
 
 module Klatch.Embassy.HTTP (run) where
 
-import Klatch.Envoy.Types
-import Klatch.Util
+import Klatch.Common.Types
+import Klatch.Common.Util
 
 import Blaze.ByteString.Builder.ByteString (fromLazyByteString)
 import Control.Concurrent.STM              (atomically)

@@ -1,8 +1,8 @@
 {-# LANGUAGE TupleSections #-}
 
-module Klatch.Params where
+module Klatch.Common.Params where
 
-import Klatch.Util
+import Klatch.Common.Util
 
 import Control.Monad             (when)
 import Data.Map                  (Map)
