@@ -1,4 +1,4 @@
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE ScopedTypeVariables, ViewPatterns #-}
 
 module Main where
 
@@ -29,12 +29,16 @@ main = do
 
   startFileLog $ \fileLog (olds :: [ParsedEvent]) -> do
     when (not $ null olds) $ do
-      let count = length olds
-          epoch = timestamp (head olds)
+      let count        = length olds
+          epoch        = timestamp (head olds)
       writeLog $ "Perusing the embassy archives, " ++ show count
                  ++ " past moments are recalled..."
       writeLog $ "The archives go back to " ++
                  bolded (formatTimestamp epoch) ++ "."
+
+    let nextSequence = case olds of
+                         [] -> -1
+                         _  -> sequence (last olds)
 
     (amqp, _) <- startAmqp EmbassyRole
 
@@ -45,7 +49,7 @@ main = do
 
     eventQueue   <- newTChanIO
     commandQueue <- newTChanIO
-    state        <- newTVarIO (-1)
+    state        <- newTVarIO nextSequence
 
     async (Klatch.Embassy.HTTP.run eventQueue) >>= link
 
@@ -54,6 +58,7 @@ main = do
        ((each olds >> (readFrom amqp
                        >-> decodingIrcMsgs commandQueue state
                        >-> loggingReads
+                       >-> handlingPings commandQueue
                        >-> into (writeToLog fileLog)))
         >-> toChannel eventQueue)
 
@@ -101,3 +106,14 @@ decodeIrcMsg state = do
 
 nextEventId :: EmbassyState -> IO EventID
 nextEventId state = atomically (modifyTVar state (+ 1) >> readTVar state)
+
+handlingPings :: TChan Command -> Pipe ParsedEvent ParsedEvent IO ()
+handlingPings q = forever $ do
+  x <- await
+  case payload x of
+    Received name (pong -> Just x) ->
+      liftIO . atomically . writeTChan q . Send name . toIRCLine $ x
+    _ -> return ()
+
+  yield x
+

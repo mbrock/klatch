@@ -107,6 +107,9 @@ formatTimestamp x = formatTime defaultTimeLocale "%c"
 writeLog :: MonadIO m => String -> m ()
 writeLog x = liftIO $ formatLogLine x >>= putStrLn
 
+string :: T.Text -> String
+string = T.unpack
+
 dimmed :: String -> String
 dimmed = highlight [Dim]
 
@@ -152,3 +155,15 @@ parseIRCLine line =
   case toIRCMsg . toUTF8 $ T.append line "\r\n" of
     Done _ r -> Just r
     _ -> Nothing
+
+toIRCLine :: IRCMsg -> T.Text
+toIRCLine = fromUTF8 . fromIRCMsg
+
+pong :: IRCMsg -> Maybe IRCMsg
+pong x
+  | msgCmd x == toUTF8 "PONG" =
+      Just $ IRCMsg { msgPrefix = Nothing
+                    , msgCmd    = toUTF8 "PONG"
+                    , msgParams = []
+                    , msgTrail  = msgTrail x }
+pong _ = Nothing

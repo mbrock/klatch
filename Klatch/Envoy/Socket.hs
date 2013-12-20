@@ -23,7 +23,9 @@ import Klatch.Util
 
 handleConnect :: Fleet -> TChan RawEvent -> Text -> Text -> Text -> IO ()
 handleConnect fleet channel name host port =
-  void . async . flip catchError (writeException name channel ()) $
+  void . async . flip catchError (writeException name channel ()) $ do
+    writeLog $ "Connecting to "
+            ++ bolded (string host ++ ":" ++ string port) ++ " ..."
     connect (unpack host) (unpack port) $ \(socket, _) ->
       onConnect fleet channel socket name host port
 
@@ -45,6 +47,7 @@ receiveLines name socket channel = runEffect $ do
 onConnect :: Fleet -> TChan RawEvent -> Socket -> Text
           -> Text -> Text -> IO ()
 onConnect fleet channel socket name host port = do
+  writeLog $ "Connected to " ++ bolded (string name) ++ "."
   writeEvent channel () $ Connected name host port
   flip catchError (writeException name channel ()) . void $ concurrently
     (receiveLines name socket channel)
