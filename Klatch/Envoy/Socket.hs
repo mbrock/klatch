@@ -23,14 +23,14 @@ import Klatch.Util
 
 handleConnect :: Fleet -> TChan RawEvent -> Text -> Text -> Text -> IO ()
 handleConnect fleet channel name host port =
-  void . async . flip catchError (writeException name channel) $
+  void . async . flip catchError (writeException name channel ()) $
     connect (unpack host) (unpack port) $ \(socket, _) ->
       onConnect fleet channel socket name host port
 
 handleSend :: Fleet -> TChan RawEvent -> Text -> Text -> IO ()
 handleSend fleet channel name line =
   Map.lookup name <$> atomically (readTVar fleet) >>=
-    maybe (writeError name channel "No such server") (flip sendTo line)
+    maybe (writeError name channel () "No such server") (flip sendTo line)
 
 addEnvoy :: Fleet -> Text -> Output Text -> IO ()
 addEnvoy m name o = atomically . modifyTVar m . Map.insert name . Envoy $ f
@@ -39,13 +39,13 @@ addEnvoy m name o = atomically . modifyTVar m . Map.insert name . Envoy $ f
 
 receiveLines :: Text -> Socket -> TChan RawEvent -> IO ()
 receiveLines name socket channel = runEffect $ do
-  for (socketLines socket) $ writeEvent channel . Received name
-  writeError name channel "Connection closed"
+  for (socketLines socket) $ writeEvent channel () . Received name
+  writeError name channel () "Connection closed"
 
 onConnect :: Fleet -> TChan RawEvent -> Socket -> Text
           -> Text -> Text -> IO ()
 onConnect fleet channel socket name host port = do
-  writeEvent channel $ Connected name host port
-  flip catchError (writeException name channel) . void $ concurrently
+  writeEvent channel () $ Connected name host port
+  flip catchError (writeException name channel ()) . void $ concurrently
     (receiveLines name socket channel)
     (addEnvoy fleet name `outputtingTo` writeToSocket socket)

@@ -14,6 +14,7 @@ envoyVersion :: Int
 envoyVersion = 1
 
 type Timestamp = Int
+type EventID   = Int
 
 data Command = Connect  Text Text Text
              | Send     Text Text
@@ -31,14 +32,15 @@ data Event a = Connected  Text Text Text
              | Pong       Int
                deriving (Eq, Show, Generic)
 
-data EventWithMetadata a = EventWithMetadata
-  { eventData :: Event a
-  , eventTimestamp :: Timestamp
-  , version :: Int }
+data EventWithMetadata d i = EventWithMetadata
+  { payload   :: Event d
+  , timestamp :: Timestamp
+  , version   :: Int
+  , sequence  :: i }
     deriving (Eq, Show, Generic)
 
-type ParsedEvent = EventWithMetadata IRCMsg
-type RawEvent    = EventWithMetadata Text
+type ParsedEvent = EventWithMetadata IRCMsg EventID
+type RawEvent    = EventWithMetadata Text   ()
 
 newtype Envoy = Envoy { sendTo :: Text -> IO () }
 

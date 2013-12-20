@@ -5,10 +5,12 @@ module Main where
 import Control.Concurrent.Async      (async, link)
 import Control.Concurrent.STM        (atomically)
 import Control.Concurrent.STM.TChan
+import Control.Concurrent.STM.TVar
 import Control.Monad                 (forever, when)
 import Control.Monad.IO.Class        (liftIO)
 import Data.Text                     (Text)
 import Pipes                         (Pipe, (>->), await, yield, each)
+import Prelude                hiding (sequence)
 
 import Klatch.Embassy.FileLog
 import Klatch.Envoy.AMQP
@@ -18,6 +20,8 @@ import Klatch.Util
 
 import qualified Klatch.Embassy.HTTP
 
+type EmbassyState = TVar EventID
+
 main :: IO ()
 main = do
   newline
@@ -25,10 +29,12 @@ main = do
 
   startFileLog $ \fileLog (olds :: [ParsedEvent]) -> do
     when (not $ null olds) $ do
-      writeLog $ "Perusing the embassy archives, " ++ show (length olds)
+      let count = length olds
+          epoch = timestamp (head olds)
+      writeLog $ "Perusing the embassy archives, " ++ show count
                  ++ " past moments are recalled..."
       writeLog $ "The archives go back to " ++
-                 (bolded . formatTimestamp . eventTimestamp $ head olds) ++ "."
+                 bolded (formatTimestamp epoch) ++ "."
 
     (amqp, _) <- startAmqp EmbassyRole
 
@@ -39,13 +45,14 @@ main = do
 
     eventQueue   <- newTChanIO
     commandQueue <- newTChanIO
+    state        <- newTVarIO (-1)
 
     async (Klatch.Embassy.HTTP.run eventQueue) >>= link
 
     runEffectsConcurrently
        (contents commandQueue >-> encoder >-> writeTo amqp)
        ((each olds >> (readFrom amqp
-                       >-> decodingIrcMsgs commandQueue
+                       >-> decodingIrcMsgs commandQueue state
                        >-> loggingReads
                        >-> into (writeToLog fileLog)))
         >-> toChannel eventQueue)
@@ -56,7 +63,7 @@ doHandshake commandQueue = do
 
   writeLog "Waiting for the envoys to report.  Going through old mail..."
 
-  awaitOnce $ \x -> case eventData x of
+  awaitOnce $ \x -> case payload x of
                       Pong n ->
                         Just . writeLog $
                           "Okay.  The envoys are connected to "
@@ -65,14 +72,15 @@ doHandshake commandQueue = do
 
   continue
 
-decodingIrcMsgs :: TChan Command -> Pipe Text ParsedEvent IO ()
-decodingIrcMsgs commandQueue =
-  decoder >-> skipNothings >-> doHandshake commandQueue >-> forever decodeIrcMsg
+decodingIrcMsgs :: TChan Command -> EmbassyState -> Pipe Text ParsedEvent IO ()
+decodingIrcMsgs commandQueue state =
+  decoder >-> skipNothings >-> doHandshake commandQueue
+          >-> forever (decodeIrcMsg state)
 
-decodeIrcMsg :: Pipe RawEvent ParsedEvent IO ()
-decodeIrcMsg = do
+decodeIrcMsg :: EmbassyState -> Pipe RawEvent ParsedEvent IO ()
+decodeIrcMsg state = do
   x <- await
-  e <- case eventData x of
+  e <- case payload x of
          Received name line -> do
            writeLog $ bolded "IRC: " ++ show (parseIRCLine line)
            case parseIRCLine line of
@@ -86,5 +94,10 @@ decodeIrcMsg = do
          Pong a          -> return $ Just (Pong a)
 
   case e of
-    Just d  -> yield $ x { eventData = d }
+    Just d -> do
+      nextId <- liftIO (nextEventId state)
+      yield $ x { payload = d, sequence = nextId }
     Nothing -> return ()
+
+nextEventId :: EmbassyState -> IO EventID
+nextEventId state = atomically (modifyTVar state (+ 1) >> readTVar state)

@@ -28,10 +28,10 @@ main = do
   (amqp, _) <- startAmqp EnvoyRole
   state@(_, channel) <- initialize
 
-  writeEvent channel Started
+  writeEvent channel () Started
 
   onCtrlC $ do
-    writeEvent channel Stopping
+    writeEvent channel () Stopping
     writeLog $ concat [ bolded "Stopping.\n\n"
                       , "  Please await a proper disconnect.\n"
                       , "  To quit immediately, hit Ctrl-C again." ]
@@ -49,16 +49,16 @@ handler :: State -> Consumer (Maybe Command) IO ()
 handler s = for cat (liftIO . handle s)
 
 handle :: State -> Maybe Command -> IO ()
-handle (_, c) Nothing    = writeError "" c "Parse error"
+handle (_, c) Nothing    = writeError "" c () "Parse error"
 handle (f, c) (Just cmd) =
   case cmd of
     Connect name host port -> handleConnect f c name host port
     Send name line         -> handleSend f c name line
     Ping                   -> handlePing f c
-    Unknown (Just s)       -> writeError "" c (T.append "Unknown command " s)
-    Unknown Nothing        -> writeError "" c "Unreadable command"
+    Unknown (Just s)       -> writeError "" c () (T.append "Unknown command " s)
+    Unknown Nothing        -> writeError "" c () "Unreadable command"
 
 handlePing :: Fleet -> (TChan RawEvent) -> IO ()
 handlePing f c = do
   n <- Map.size <$> atomically (readTVar f)
-  writeEvent c (Pong n)
+  writeEvent c () (Pong n)

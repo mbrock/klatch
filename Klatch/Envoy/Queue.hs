@@ -8,6 +8,7 @@ import Control.Exception      (IOException)
 import Control.Monad.IO.Class (MonadIO, liftIO)
 import Data.Text              (Text, pack)
 import Pipes                  (Producer, Consumer, for, cat)
+import Prelude         hiding (sequence)
 
 import Klatch.Envoy.Types
 import Klatch.Util (contents, getPOSIXMsecs)
@@ -21,22 +22,24 @@ readFrom Queue { input } = contents input
 writeTo :: Queue -> Consumer Text IO ()
 writeTo Queue { output } = for cat (liftIO . atomically . output)
 
-writeException :: (Functor m, MonadIO m) => Text -> TChan (EventWithMetadata a)
-               -> IOException -> m ()
-writeException name channel = writeError name channel . pack . show
+writeException :: (Functor m, MonadIO m)
+               => Text -> TChan (EventWithMetadata a i) -> i
+                       -> IOException -> m ()
+writeException name channel i = writeError name channel i . pack . show
 
 writeError :: (Functor m, MonadIO m)
-           => Text -> TChan (EventWithMetadata a) -> Text -> m ()
-writeError name channel = writeEvent channel . Error name
+           => Text -> TChan (EventWithMetadata a i) -> i -> Text -> m ()
+writeError name channel i = writeEvent channel i . Error name
 
 timestamped :: (Functor m, MonadIO m) => (Timestamp -> a) -> m a
 timestamped = (<$> liftIO getPOSIXMsecs)
 
 writeEvent :: (Functor m, MonadIO m)
-           => TChan (EventWithMetadata a) -> (Event a) -> m ()
-writeEvent c e = do
+           => TChan (EventWithMetadata a i) -> i -> (Event a) -> m ()
+writeEvent c i e = do
   timestamp <- liftIO getPOSIXMsecs
   liftIO . atomically . writeTChan c $
-    EventWithMetadata { eventData = e
-                      , eventTimestamp = timestamp
-                      , version = envoyVersion }
+    EventWithMetadata { payload   = e
+                      , timestamp = timestamp
+                      , version   = envoyVersion
+                      , sequence  = i }
