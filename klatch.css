@@ -8,9 +8,14 @@ section {
   margin: 0 auto;
 }
 
-#log > li {
+#log li {
   text-overflow: ellipsis;
   overflow: hidden;
   white-space: nowrap;
   width: 50em;
+}
+
+.timestamp {
+  color: grey;
+  margin-right: 1em;
 }
