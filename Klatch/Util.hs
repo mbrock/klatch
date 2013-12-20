@@ -161,7 +161,7 @@ toIRCLine = fromUTF8 . fromIRCMsg
 
 pong :: IRCMsg -> Maybe IRCMsg
 pong x
-  | msgCmd x == toUTF8 "PONG" =
+  | msgCmd x == toUTF8 "PING" =
       Just $ IRCMsg { msgPrefix = Nothing
                     , msgCmd    = toUTF8 "PONG"
                     , msgParams = []
