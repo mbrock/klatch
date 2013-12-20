@@ -9,7 +9,8 @@ import Control.Concurrent.STM.TVar
 import Control.Monad                 (forever, when)
 import Control.Monad.IO.Class        (liftIO)
 import Data.Text                     (Text)
-import Pipes                         (Pipe, (>->), await, yield, each)
+import Pipes                         (Pipe, Producer, (>->),
+                                      await, yield, each)
 import Prelude                hiding (sequence)
 
 import Klatch.Embassy.FileLog
@@ -55,12 +56,18 @@ main = do
 
     runEffectsConcurrently
        (contents commandQueue >-> encoder >-> writeTo amqp)
-       ((each olds >> (readFrom amqp
-                       >-> decodingIrcMsgs commandQueue state
-                       >-> loggingReads
-                       >-> handlingPings commandQueue
-                       >-> into (writeToLog fileLog)))
+       ((replaying olds
+         >> (readFrom amqp >-> decodingIrcMsgs commandQueue state
+                           >-> loggingReads
+                           >-> handlingPings commandQueue
+                           >-> into (writeToLog fileLog)))
         >-> toChannel eventQueue)
+
+replaying :: [ParsedEvent] -> Producer ParsedEvent IO ()
+replaying olds = do
+  yield . metaevent $ Replaying (length olds)
+  each olds
+  yield . metaevent $ Streaming
 
 doHandshake :: TChan Command -> Pipe RawEvent RawEvent IO ()
 doHandshake commandQueue = do
@@ -98,6 +105,9 @@ decodeIrcMsg state = do
          Stopping        -> return $ Just Stopping
          Pong a          -> return $ Just (Pong a)
 
+         (isMetaevent -> True) -> return Nothing
+         _                     -> error "Someone made a mistake."
+
   case e of
     Just d -> do
       nextId <- liftIO (nextEventId state)
@@ -111,8 +121,8 @@ handlingPings :: TChan Command -> Pipe ParsedEvent ParsedEvent IO ()
 handlingPings q = forever $ do
   x <- await
   case payload x of
-    Received name (pong -> Just x) ->
-      liftIO . atomically . writeTChan q . Send name . toIRCLine $ x
+    Received name (pong -> Just x') ->
+      liftIO . atomically . writeTChan q . Send name . toIRCLine $ x'
     _ -> return ()
 
   yield x

@@ -9,6 +9,7 @@ import Data.Map                      (Map)
 import Data.Text                     (Text)
 import GHC.Generics                  (Generic)
 import Network.IRC.ByteString.Parser (IRCMsg, UserInfo)
+import Prelude                hiding (sequence)
 
 envoyVersion :: Int
 envoyVersion = 1
@@ -29,6 +30,8 @@ data Event a = Connected  Text Text Text
              | Error      Text Text
              | Started
              | Stopping
+             | Replaying  Int
+             | Streaming
              | Pong       Int
                deriving (Eq, Show, Generic)
 
@@ -51,3 +54,15 @@ $(deriveJSON defaultOptions ''Event)
 $(deriveJSON defaultOptions ''EventWithMetadata)
 $(deriveJSON defaultOptions ''UserInfo)
 $(deriveJSON defaultOptions ''IRCMsg)
+
+metaevent :: Event IRCMsg -> ParsedEvent
+metaevent p = EventWithMetadata {
+                timestamp = 0,
+                sequence  = -1,
+                version   = envoyVersion,
+                payload   = p }
+
+isMetaevent :: Event a -> Bool
+isMetaevent (Replaying _) = True
+isMetaevent Streaming     = True
+isMetaevent _             = False
