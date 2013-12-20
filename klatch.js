@@ -10,7 +10,7 @@
       if (this.state.replaying > 0)
         return <Replaying count={this.state.replaying} />;
       else
-        return <MessageLog messages={this.state.messages} />;
+        return <AreaSplitter messages={this.state.messages} />;
     },
 
     updateReplayCount: function () {
@@ -21,10 +21,21 @@
     },
 
     recordMessage: function (message) {
-      if (message.payload.tag === 'Received') {
-        var source;
-        var name = message.payload.contents[0];
-        var cmd  = message.payload.contents[1];
+      var messages;
+      var replaying;
+      var isMetamessage = message.sequence === -1;
+      var source;
+      var name;
+      var cmd;
+
+      if (message.payload.tag === 'Replaying') {
+        messages = this.state.messages;
+        replaying = message.payload.contents;
+      }
+
+      else if (message.payload.tag === 'Received') {
+        name = message.payload.contents[0];
+        cmd  = message.payload.contents[1];
 
         if (cmd.msgPrefix && cmd.msgPrefix.Right) {
           source = cmd.msgPrefix.Right;
@@ -34,42 +45,68 @@
           source = 'Messages';
         }
 
-        if (this.state.messages[source]) {
-          var messages = Object.create(this.state.messages);
-          messages[source] = messages[source].concat(message);
-          this.setState({
-            messages: messages,
-            replaying: this.updateReplayCount()
-          });
-        }
+        messages = Object.create(this.state.messages);
+        messages[source] = (messages[source] || []).concat(message);
       }
+
+      else {
+        messages = this.state.messages;
+        replaying = this.state.replaying;
+      }
+
+      this.setState({
+        messages: messages,
+        replaying: isMetamessage ? replaying : this.updateReplayCount()
+      });
     }
   });
 
-  var SourceSplitter = React.createClass({
+  var AreaSplitter = React.createClass({
     render: function () {
       var areas = [];
-      var source;
+      var source, messages;
 
       for (source in this.props.messages) {
+        messages = this.props.messages[source];
         areas.push(<Area name={source}
-                         messages={this.props.messages[source]});
+                         messages={this.props.messages[source]} />);
       }
 
-      return <div>{messages}</div>
+      return <div>{areas}</div>;
     }
-  };
+  });
 
   var Area = React.createClass({
     render: function () {
+      var source;
+      var newSource;
+      var sourceDiffers = true;
+      var i = 0;
+
       var messages = this.props.messages.map(function (message) {
+        console.log(message.payload.contents);
+
+        if (message.payload.contents[1] &&
+            message.payload.contents[1].msgPrefix &&
+            message.payload.contents[1].msgPrefix.Left &&
+            message.payload.contents[1].msgPrefix.Left.userNick) {
+
+          newSource     = message.payload.contents[1].msgPrefix.Left.userNick;
+          sourceDiffers = source !== newSource;
+          source        = newSource;
+        }
+
         if (message.payload.tag === "Received")
-          return <IRCMessage message={message} key={message.sequence} />;
+          return <IRCMessage message={message}
+                             sourceDiffers={sourceDiffers || !(i++ % 5)}
+                             key={message.sequence} />;
         else
           return <Message message={message} key={message.sequence} />;
       });
 
-      return (<article>
+      var isChannel = this.props.name.match(/^#/);
+
+      return (<article className={ isChannel ? 'channel' : 'boring' }>
                <h1>{this.props.name}</h1>
                <section>{messages}</section>
               </article>);
@@ -79,7 +116,7 @@
   var Replaying = React.createClass({
     render: function () {
       return (
-        <span className="replaying"
+        <span className="replaying">
           Replaying {this.props.count} events...
         </span>
       );
@@ -113,10 +150,23 @@
 
   var Message = React.createClass({
     render: function () {
+      var content;
+      var timestamp;
+
+      if (this.props.message.timestamp % 1000000 == 0) {
+        timestamp = <Timestamp t={this.props.message.timestamp} />;
+      }
+
       return <div>
-        <Timestamp t={this.props.message.timestamp} />
         {JSON.stringify(this.props.message.payload)}
       </div>;
+    }
+  });
+
+  var Utterance = React.createClass({
+    render: function () {
+      var source = this.props.by ? <cite>{this.props.by}</cite> : null;
+      return <p>{source}<span>{this.props.text}</span></p>;
     }
   });
 
@@ -125,12 +175,33 @@
       var payload = this.props.message.payload;
       var name = payload.contents[0];
       var msg = payload.contents[1];
+      var source;
+
+      var content;
+      var timestamp;
+
+      if (this.props.message.timestamp % 4 == 0) {
+        timestamp = <Timestamp t={this.props.message.timestamp} />;
+      }
+
+      if (msg.msgCmd === 'PRIVMSG') {
+        if (msg.msgPrefix && msg.msgPrefix.Left) {
+          console.log("naw %o", msg.msgPrefix);
+          source = this.props.sourceDiffers ? msg.msgPrefix.Left.userNick : null;
+        }
+        content = <Utterance by={source} text={msg.msgTrail} />;
+
+      } else {
+        content = <span>
+          <ServerKey name={name} />
+          <Command command={msg.msgCmd} />
+          <Trail text={msg.msgTrail} />;
+        </span>;
+      }
 
       return <div>
-        <Timestamp t={this.props.message.timestamp} />
-        <ServerKey name={name} />
-        <Command command={msg.msgCmd} />
-        <Trail text={msg.msgTrail} />
+        {timestamp}
+        {content}
         </div>;
     }
   });
