@@ -9,10 +9,13 @@
 
     render: function () {
       var messages = this.state.messages.map(function (message) {
-        return <Message message={message} key={message.sequence} />;
+        if (message.payload.tag === "Received")
+          return <IRCMessage message={message} key={message.sequence} />;
+        else
+          return <Message message={message} key={message.sequence} />;
       });
 
-      return (<ol> {messages} </ol>);
+      return (<div> {messages} </div>);
     },
 
     recordMessage: function (message) {
@@ -28,12 +31,45 @@
     }
   });
 
+  var ServerKey = React.createClass({
+    render: function () {
+      return <span className="server-key">{this.props.name}</span>;
+    }
+  });
+
+  var Command = React.createClass({
+    render: function () {
+      return <span className="command">{this.props.command}</span>;
+    }
+  });
+
+  var Trail = React.createClass({
+    render: function () {
+      return <span className="trail">{this.props.text}</span>;
+    }
+  });
+
   var Message = React.createClass({
     render: function () {
-      return <li>
+      return <div>
         <Timestamp t={this.props.message.timestamp} />
         {JSON.stringify(this.props.message.payload)}
-      </li>;
+      </div>;
+    }
+  });
+
+  var IRCMessage = React.createClass({
+    render: function () {
+      var payload = this.props.message.payload;
+      var name = payload.contents[0];
+      var msg = payload.contents[1];
+
+      return <div>
+        <Timestamp t={this.props.message.timestamp} />
+        <ServerKey name={name} />
+        <Command command={msg.msgCmd} />
+        <Trail text={msg.msgTrail} />
+        </div>;
     }
   });
 
