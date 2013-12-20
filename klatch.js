@@ -3,7 +3,7 @@
 (function () {
   var Viewer = React.createClass({
     getInitialState: function () {
-      return { replaying: 0, messages: [] };
+      return { replaying: 0, messages: { } };
     },
 
     render: function () {
@@ -13,16 +13,54 @@
         return <MessageLog messages={this.state.messages} />;
     },
 
+    updateReplayCount: function () {
+      if (this.state.replaying)
+        return this.state.replaying - 1;
+      else
+        return this.state.replaying;
+    },
+
     recordMessage: function (message) {
-      var messages = this.state.messages.concat([message]);
-      this.setState({
-        messages: messages,
-        replaying: --this.state.replaying
-      });
+      if (message.payload.tag === 'Received') {
+        var source;
+        var name = message.payload.contents[0];
+        var cmd  = message.payload.contents[1];
+
+        if (cmd.msgPrefix && cmd.msgPrefix.Right) {
+          source = cmd.msgPrefix.Right;
+        } else if (cmd.msgCmd === 'PRIVMSG') {
+          source = cmd.msgParams[0];
+        } else {
+          source = 'Messages';
+        }
+
+        if (this.state.messages[source]) {
+          var messages = Object.create(this.state.messages);
+          messages[source] = messages[source].concat(message);
+          this.setState({
+            messages: messages,
+            replaying: this.updateReplayCount()
+          });
+        }
+      }
     }
   });
 
-  var MessageLog = React.createClass({
+  var SourceSplitter = React.createClass({
+    render: function () {
+      var areas = [];
+      var source;
+
+      for (source in this.props.messages) {
+        areas.push(<Area name={source}
+                         messages={this.props.messages[source]});
+      }
+
+      return <div>{messages}</div>
+    }
+  };
+
+  var Area = React.createClass({
     render: function () {
       var messages = this.props.messages.map(function (message) {
         if (message.payload.tag === "Received")
@@ -31,7 +69,10 @@
           return <Message message={message} key={message.sequence} />;
       });
 
-      return (<div> {messages} </div>);
+      return (<article>
+               <h1>{this.props.name}</h1>
+               <section>{messages}</section>
+              </article>);
     }
   });
 
