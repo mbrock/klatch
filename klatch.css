@@ -1,6 +1,8 @@
 body {
-  font-family: "Anonymous Pro", monospace;
+  font-family: "Ubuntu Mono", "Anonymous Pro", monospace;
   background-color: #f6f6f6;
+  color: #333;
+  font-size: 16px;
 }
 
 .timestamp {
@@ -8,7 +10,7 @@ body {
   float: right;
   color: #777;
   margin-left: 1ex;
-  margin-bottom: 4px;
+  margin-bottom: 8px;
   text-align: right;
   font-size: 80%;
 }
@@ -41,7 +43,8 @@ p {
 
 p > span {
   display: inline-block;
-  width: 540px;
+/*  width: 600px; */
+  line-height: 1.2;
 }
 
 p > cite {
@@ -55,6 +58,7 @@ p > cite {
 }
 
 article {
+  opacity: 0.7;
   display: inline-block;
   overflow-y: scroll;
   float: left;
@@ -66,8 +70,8 @@ article {
   margin-bottom: 6px;
   padding: 0;
 
-  background-color: #eee;
-  border: 1px solid #aaa;
+  background-color: #f3f3f3;
+  border: 1px solid #555;
 }
 
 article h1 {
@@ -75,28 +79,30 @@ article h1 {
   margin: 0;
   padding-left: 1em;
   padding-right: 1em;
-  line-height: 25px;
-  font-size: 22px;
+  line-height: 1.4;
+  font-size: 16px;
   color: white;
-
+  background-color: #aaa;
+  border: 0px solid #888;
+  border-width: 0 1px 1px 0;
+  font-weight: bold;
   text-transform: uppercase;
+  letter-spacing: 2px;
 }
 
 article.channel {
   height: 768px;
 }
 
-article h1 {
-  background-color: #ccc;
+article.channel h1 {
+  background-color: salmon;
 }
 
 article:hover {
-  background-color: #f3f3f3;
-  border-color: #555;
+  opacity: 1;
 }
 
 article:hover h1 {
-  background-color: #aaa;
 }
 
 article section {
