@@ -36,7 +36,7 @@
     } else if (msg.msgCmd === 'PRIVMSG') {
       return msg.msgParams[0];
     } else {
-      return 'Messages';
+      return '*Server*';
     }
   };
 

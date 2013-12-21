@@ -88,6 +88,9 @@ article section {
   height: 380px;
   font-size: 15px;
 }
+article.boring section {
+  height: 200px;
+}
 article h1 {
   margin: 0;
   height: 22px;
