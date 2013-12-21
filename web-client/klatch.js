@@ -34,7 +34,7 @@
       var scalar = this.scalarHash(s);
       var colors = ["#b58900", "#cb4b16", "#dc322f", "#d33682",
                     "#6c71c4", "#268bd2", "#2aa198", "#859900"];
-      return colors[Math.round(scalar * colors.length)];
+      return colors[Math.floor(scalar * colors.length)];
     }
   };
 
@@ -284,13 +284,15 @@
 
       return (<article className={"channel" + visibility}>
                <AreaHeader name={this.props.name} />
-               <section>{this.props.messages}</section>
-               <input className="input" type="text" />
+               <div>
+                <section> {this.props.messages} </section>
+                <input className="input" type="text" />
+               </div>
               </article>);
     },
 
     componentDidMount: function (node) {
-      $(node).scrollTop($("section", node).height() + 10);
+      $("section", node).scrollTop($("section", node).height() + 200);
       $("input", node).focus();
     }
   });
@@ -302,7 +304,7 @@
       return (<article className={"boring" + visibility}>
                <AreaHeader name={this.props.name}
                            minimized={this.props.minimized} />
-               <section>{this.props.messages}</section>
+               <div><section>{this.props.messages}</section></div>
               </article>);
     },
 

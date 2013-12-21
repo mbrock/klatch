@@ -1,5 +1,8 @@
+* {
+  box-sizing: border-box;
+}
 body {
-  font-family: "Ubuntu Mono", "Anonymous Pro", monospace;
+  font-family: "Anonymous Pro", "Ubuntu Mono", monospace;
   background-color: #ccc;
   color: #333;
   font-size: 16px;
@@ -51,19 +54,17 @@ p > cite {
 }
 article {
   display: block;
-  overflow-y: scroll;
   float: left;
   width: 660px;
-  height: 380px;
   margin-right: 5px;
-  margin-bottom: 6px;
   padding: 0;
   background-color: #f3f3f3;
-  border: 1px solid #555;
+  border: 1px solid #888888;
 }
 article.minimized {
-  opacity: 0.4;
+  opacity: 0.6;
   height: auto;
+  border-width: 0 inherit 0 inherit;
 }
 article.minimized:hover {
   opacity: 0.9;
@@ -72,27 +73,29 @@ article.minimized h1 {
   position: relative;
   border: 0;
 }
-article.minimized > section {
+article.minimized > div {
   display: none;
 }
-article.minimized a[rel=toggle-area-minimization] {
+article.minimized a[rel=toggle-area-minimization]:before {
   content: "▼";
+}
+article.minimized a:not([rel=toggle-area-minimization]) {
+  opacity: 0;
 }
 article section {
   padding: 10px;
-  padding-top: 35px;
+  overflow-y: scroll;
+  height: 380px;
+  font-size: 15px;
 }
 article h1 {
-  position: absolute;
   margin: 0;
+  height: 22px;
   padding-left: 1em;
-  padding-right: 1em;
   line-height: 1.4;
   font-size: 16px;
   color: white;
-  background-color: #aaa;
-  border: 0px solid #888;
-  border-width: 0 1px 1px 0;
+  border-bottom: 1px solid #888888;
   font-weight: bold;
   text-transform: uppercase;
   letter-spacing: 2px;
@@ -108,9 +111,9 @@ article h1 a[rel=toggle-area-minimization]:before {
   content: "▲";
 }
 article hr {
-  height: 2px;
+  height: 1px;
   border: none;
-  background-color: #aaa;
+  background-color: #888888;
 }
 article hr + hr {
   display: none;
@@ -121,21 +124,20 @@ article .input {
   outline: none;
   font: inherit;
   line-height: 1.5;
-  border: 0;
   margin-bottom: 0;
   padding-left: 8px;
-  border-top: 1px solid #aaa;
+  border: 0;
+  border-top: 1px solid #888888;
 }
 div.replaying {
   width: 100%;
   text-align: center;
 }
 div.replaying span {
-  position: relative;
-  top: -18px;
   display: inline-block;
-  height: 16px;
-  background-color: royalblue;
+  height: 22px;
+  background-color: #e49188;
+  border: 1px solid #888888;
 }
 @-webkit-keyframes fade-in {
   0% {
