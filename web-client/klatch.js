@@ -282,18 +282,25 @@
     render: function () {
       var visibility = this.props.minimized ? ' minimized' : '';
 
-      return (<article className={"channel" + visibility}>
+      return (<article className={"area channel" + visibility}>
                <AreaHeader name={this.props.name} />
                <div>
-                <section> {this.props.messages} </section>
+                <section className="area-content">
+                 {this.props.messages}
+                </section>
                 <input className="input" type="text" />
                </div>
               </article>);
     },
 
     componentDidMount: function (node) {
-      $("section", node).scrollTop($("section", node).height() + 200);
       $("input", node).focus();
+
+      var lastReadMarker = $("hr", node).last();
+      if (lastReadMarker[0]) {
+        // how to make this work properly?
+        $("section", node).scrollTop(100000);
+      }
     }
   });
 
@@ -301,16 +308,16 @@
     render: function () {
       var visibility = this.props.minimized ? ' minimized' : '';
 
-      return (<article className={"boring" + visibility}>
+      return (<article className={"area boring" + visibility}>
                <AreaHeader name={this.props.name}
                            minimized={this.props.minimized} />
-               <div><section>{this.props.messages}</section></div>
+               <div>
+                <section className="area-content">
+                 {this.props.messages}
+                </section>
+               </div>
               </article>);
     },
-
-    componentDidMount: function (node) {
-      $(node).scrollTop($("section", node).height() + 10);
-    }
   });
 
   var MarkedAsRead = React.createClass({
