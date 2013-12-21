@@ -17,22 +17,24 @@ envoyVersion = 1
 type Timestamp = Int
 type EventID   = Int
 
-data Command = Connect  Text Text Text
-             | Send     Text Text
+data Command = Connect         Text Text Text
+             | Send            Text Text
              | Ping
-             | Unknown  (Maybe Text)
+             | SaveClientEvent Text Text
+             | Unknown         (Maybe Text)
                deriving (Eq, Show, Generic)
 
 type EventMetadata = (Timestamp, Int)
 
-data Event a = Connected  Text Text Text
-             | Received   Text a
-             | Error      Text Text
+data Event a = Connected   Text Text Text
+             | Received    Text a
+             | Error       Text Text
              | Started
              | Stopping
-             | Replaying  Int
+             | Replaying   Int
              | Streaming
-             | Pong       Int
+             | Pong        Int
+             | ClientEvent Text Text
                deriving (Eq, Show, Generic)
 
 data EventWithMetadata d i = EventWithMetadata

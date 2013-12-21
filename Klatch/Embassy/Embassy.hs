@@ -53,7 +53,7 @@ main = do
     commandQueue <- newTChanIO
     state        <- newTVarIO nextSequence
 
-    async (Klatch.Embassy.HTTP.run eventQueue) >>= link
+    async (Klatch.Embassy.HTTP.run eventQueue commandQueue) >>= link
 
     runEffectsConcurrently
        (contents commandQueue >-> encoder >-> writeTo amqp)
@@ -105,6 +105,7 @@ decodeIrcMsg state = do
          Started         -> return $ Just Started
          Stopping        -> return $ Just Stopping
          Pong a          -> return $ Just (Pong a)
+         ClientEvent a b -> return $ Just (ClientEvent a b)
 
          (isMetaevent -> True) -> return Nothing
          _                     -> error "Someone made a mistake."

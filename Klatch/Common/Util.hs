@@ -74,6 +74,9 @@ toUTF8 = E.encodeUtf8
 fromUTF8 :: BS.ByteString -> T.Text
 fromUTF8 = E.decodeUtf8
 
+fromLazyUTF8 :: BSL.ByteString -> T.Text
+fromLazyUTF8 = fromUTF8 . BSL.toStrict
+
 getPOSIXMsecs :: IO Int
 getPOSIXMsecs = fmap (truncate . (* 1000) . toRational) getPOSIXTime
 

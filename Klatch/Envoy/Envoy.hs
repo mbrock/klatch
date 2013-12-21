@@ -55,10 +55,15 @@ handle (f, c) (Just cmd) =
     Connect name host port -> handleConnect f c name host port
     Send name line         -> handleSend f c name line
     Ping                   -> handlePing f c
+    SaveClientEvent tag e  -> handleClientEvent c tag e
     Unknown (Just s)       -> writeError "" c () (T.append "Unknown command " s)
     Unknown Nothing        -> writeError "" c () "Unreadable command"
 
-handlePing :: Fleet -> (TChan RawEvent) -> IO ()
+handlePing :: Fleet -> TChan RawEvent -> IO ()
 handlePing f c = do
   n <- Map.size <$> atomically (readTVar f)
   writeEvent c () (Pong n)
+
+handleClientEvent :: TChan RawEvent -> T.Text -> T.Text -> IO ()
+handleClientEvent c tag stuff =
+  writeEvent c () (ClientEvent tag stuff)
