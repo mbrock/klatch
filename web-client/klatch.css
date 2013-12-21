@@ -156,7 +156,7 @@ article hr + hr {
   display: none;
 }
 
-a[rel=toggle-area-minimization] {
+article h1 a {
   text-decoration: none;
   margin-right: 8px;
 }

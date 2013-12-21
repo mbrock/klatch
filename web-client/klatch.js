@@ -242,8 +242,8 @@
 
       return <h1 style={style}>
         <a href="#" rel="toggle-area-minimization"></a>
+        <a href="#" rel="mark-as-read">✔︎</a>
         {this.props.name}
-        (<a href="#" rel="mark-as-read">Mark as read</a>)
       </h1>;
     },
 
