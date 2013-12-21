@@ -130,8 +130,7 @@ article .input {
   border-top: 1px solid #888888;
 }
 div.replaying {
-  width: 100%;
-  text-align: center;
+  text-align: left;
 }
 div.replaying span {
   display: inline-block;
