@@ -43,7 +43,6 @@ p {
 
 p > span {
   display: inline-block;
-/*  width: 600px; */
   line-height: 1.2;
 }
 
@@ -145,4 +144,14 @@ span.replaying {
   margin-bottom: 0;
   padding-left: 8px;
   border-top: 1px solid #aaa;
+}
+
+article h1 a {
+  color: white;
+}
+
+article hr {
+  height: 2px;
+  border: none;
+  background-color: #aaa;
 }

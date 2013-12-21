@@ -1,6 +1,19 @@
 /** @jsx React.DOM */
 
 (function () {
+  var Klatch = {
+    ClientTag: 'klatch.js',
+    ClientVersion: '0.0.1',
+
+    saveClientEvent: function (event) {
+      event.version = Klatch.ClientVersion;
+      return $.post('/', JSON.stringify({
+        tag: 'SaveClientEvent',
+        contents: [Klatch.ClientTag, JSON.stringify(event)]
+      }));
+    }
+  };
+
   function MessageModel (message) {
     this.message   = message;
     this.timestamp = message.timestamp;
@@ -10,6 +23,13 @@
     this.contents  = message.payload.contents;
 
     this.isMeta    = this.sequence === -1;
+    this.isClient  = this.tag         === 'ClientEvent'
+                  && this.contents[0] === 'klatch.js';
+
+    if (this.isClient) {
+      this.data = JSON.parse(this.contents[1]);
+      this.clientEventTag = this.data.tag;
+    }
   }
 
   (function () {
@@ -84,6 +104,12 @@
         replayed = this.updateReplayCount(message.isMeta);
       }
 
+      else if (message.payload.tag === 'ClientEvent') {
+        messages = this.handleClientEvent(message.data.tag, message);
+        replaying = this.state.replaying;
+        replayed = this.updateReplayCount(false);
+      }
+
       else {
         messages = this.state.messages;
         replaying = this.state.replaying;
@@ -98,6 +124,21 @@
         replaying: replaying,
         replayed: replayed
       });
+    },
+
+    handleClientEvent: function (tag, message) {
+      var messages;
+      var source;
+
+      if (tag === 'mark-as-read') {
+        source = message.data.area;
+        messages = Object.create(this.state.messages);
+        messages[source] = (messages[source] || []).concat(message);
+      } else {
+        console.log("Unrecognized client event '%o': %o", tag, message);
+      }
+
+      return messages;
     }
   });
 
@@ -148,6 +189,8 @@
           return <IRCMessage message={message}
                              sourceDiffers={sourceDiffers || !(i++ % 5)}
                              key={message.sequence} />;
+        else if (message.clientEventTag === 'mark-as-read')
+          return <MarkedAsRead />;
         else
           return <Message message={message} key={message.sequence} />;
       });
@@ -161,10 +204,30 @@
     }
   });
 
+  var AreaHeader = React.createClass({
+    render: function () {
+      return <h1>
+        {this.props.name}
+        (<a href="#" rel="mark-as-read">Mark as read</a>)
+      </h1>;
+    },
+
+    componentDidMount: function (node) {
+      var self = this;
+      $("a[rel=mark-as-read]", node).click(function () {
+        Klatch.saveClientEvent({
+          tag: 'mark-as-read',
+          area: self.props.name,
+          server: self.props.server
+        });
+      });
+    }
+  });
+
   var Channel = React.createClass({
     render: function () {
       return (<article className="channel">
-               <h1>{this.props.name}</h1>
+               <AreaHeader name={this.props.name} />
                <section>{this.props.messages}</section>
                <input className="input" type="text" />
               </article>);
@@ -179,7 +242,7 @@
   var Boring = React.createClass({
     render: function () {
       return (<article className="boring">
-               <h1>{this.props.name}</h1>
+               <AreaHeader name={this.props.name} />
                <section>{this.props.messages}</section>
               </article>);
     },
@@ -187,6 +250,10 @@
     componentDidMount: function (node) {
       $(node).scrollTop($("section", node).height() + 10);
     }
+  });
+
+  var MarkedAsRead = React.createClass({
+    render: function () { return <hr />; }
   });
 
   var IRCMessage = React.createClass({
