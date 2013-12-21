@@ -73,7 +73,8 @@
 
       if (tag === 'mark-as-read') {
         source = message.data.area;
-        messages[source] = (this.state.messages[source] || []).concat(message);
+        if (this.state.messages[source])
+          messages[source] = this.state.messages[source].concat(message);
 
       } else if (tag === 'toggle-area-minimization') {
         source = message.data.area;
