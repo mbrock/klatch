@@ -149,5 +149,5 @@ div.replaying span {
 .area-splitter {
   -webkit-animation-name: fade-in;
   -webkit-animation-timing-function: ease-in;
-  -webkit-animation-duration: 0.4s;
+  -webkit-animation-duration: 3s;
 }
