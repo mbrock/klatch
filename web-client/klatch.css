@@ -41,16 +41,16 @@ p {
 }
 p > span {
   display: inline-block;
-  line-height: 1.2;
+  line-height: 1.1;
+  margin-left: 6px;
 }
 p > cite {
-  display: block;
-  padding-left: 20px;
-  margin-top: 4px;
-  margin-bottom: 6px;
+  display: inline-block;
   font-weight: bold;
   font-style: normal;
-  font-size: 14px;
+}
+p > cite:after {
+  content: ":";
 }
 article {
   display: block;
@@ -83,7 +83,6 @@ article.minimized a:not([rel=toggle-area-minimization]) {
   opacity: 0;
 }
 article section {
-  position: relative;
   padding: 10px;
   overflow-y: scroll;
   height: 380px;
@@ -138,7 +137,6 @@ div.replaying span {
   display: inline-block;
   height: 22px;
   background-color: #e49188;
-  border: 1px solid #888888;
 }
 @-webkit-keyframes fade-in {
   0% {
