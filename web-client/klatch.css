@@ -57,7 +57,7 @@ p > cite {
 }
 
 article {
-  opacity: 0.7;
+  opacity: 0.9;
   display: inline-block;
   overflow-y: scroll;
   float: left;
@@ -72,6 +72,9 @@ article {
   background-color: #f3f3f3;
   border: 1px solid #555;
 }
+
+article.minimized       { opacity: 0.4 }
+article.minimized:hover { opacity: 0.9 }
 
 article h1 {
   position: absolute;
@@ -95,13 +98,6 @@ article.channel {
 
 article.channel h1 {
   background-color: salmon;
-}
-
-article:hover {
-  opacity: 1;
-}
-
-article:hover h1 {
 }
 
 article section {
