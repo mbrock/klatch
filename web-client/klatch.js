@@ -14,6 +14,23 @@
     }
   };
 
+  var CleverStuff = {
+    scalarHash: function (s) {
+      // NOTE: Highly bogus, not actually clever.
+      var h = i = c = 0;
+      while (i++ < s.length) {
+        c = s.charCodeAt(i);
+        h ^= (c % 7) << 5;
+        h ^= (c % 37) << 4;
+        h ^= (c % 97) << 3;
+        h ^= (c % 137) << 2;
+        h ^= (c % 251) << 1;
+        h = h % 37;
+      }
+      return h / 37.0;
+    }
+  };
+
   function MessageModel (message) {
     this.message   = message;
     this.timestamp = message.timestamp;
@@ -206,10 +223,21 @@
 
   var AreaHeader = React.createClass({
     render: function () {
-      return <h1>
+      var style = {
+        "background-color": this.calculateColor()
+      };
+
+      return <h1 style={style}>
         {this.props.name}
         (<a href="#" rel="mark-as-read">Mark as read</a>)
       </h1>;
+    },
+
+    calculateColor: function () {
+      var scalar = CleverStuff.scalarHash(this.props.name);
+      var colors = ["#b58900", "#cb4b16", "#dc322f", "#d33682",
+                    "#6c71c4", "#268bd2", "#2aa198", "#859900"];
+      return colors[Math.round(scalar * colors.length)];
     },
 
     componentDidMount: function (node) {
@@ -331,4 +359,5 @@
   })();
 
   React.renderComponent(viewer, log);
+
 })();
