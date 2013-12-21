@@ -282,14 +282,19 @@
     render: function () {
       var visibility = this.props.minimized ? ' minimized' : '';
 
+      var messages;
+
+      if (!this.props.minimized)
+        messages = <div>
+                    <section className="area-content">
+                     {this.props.messages}
+                    </section>
+                    <input className="input" type="text" />
+                   </div>;
+
       return (<article className={"area channel" + visibility}>
                <AreaHeader name={this.props.name} />
-               <div>
-                <section className="area-content">
-                 {this.props.messages}
-                </section>
-                <input className="input" type="text" />
-               </div>
+               {messages}
               </article>);
     },
 
@@ -307,15 +312,19 @@
   var Boring = React.createClass({
     render: function () {
       var visibility = this.props.minimized ? ' minimized' : '';
+      var messages;
+
+      if (!this.props.minimized)
+        messages = <div>
+                    <section className="area-content">
+                     {this.props.messages}
+                    </section>
+                   </div>;
 
       return (<article className={"area boring" + visibility}>
                <AreaHeader name={this.props.name}
                            minimized={this.props.minimized} />
-               <div>
-                <section className="area-content">
-                 {this.props.messages}
-                </section>
-               </div>
+               {messages}
               </article>);
     },
   });
