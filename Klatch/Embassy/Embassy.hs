@@ -60,7 +60,6 @@ main = do
        ((replaying olds
          >> (readFrom amqp >-> decodingIrcMsgs commandQueue state
                            >-> loggingReads
-                           >-> handlingPings commandQueue
                            >-> into (writeToLog fileLog)))
         >-> toChannel eventQueue)
 
@@ -118,14 +117,3 @@ decodeIrcMsg state = do
 
 nextEventId :: EmbassyState -> IO EventID
 nextEventId state = atomically (modifyTVar state (+ 1) >> readTVar state)
-
-handlingPings :: TChan Command -> Pipe ParsedEvent ParsedEvent IO ()
-handlingPings q = forever $ do
-  x <- await
-  case payload x of
-    Received name (pong -> Just x') ->
-      liftIO . atomically . writeTChan q . Send name . toIRCLine $ x'
-    _ -> return ()
-
-  yield x
-

@@ -48,6 +48,9 @@ encoder = P.map (TL.toStrict . EL.decodeUtf8 . encode)
 decoder :: FromJSON a => Pipe T.Text (Maybe a) IO ()
 decoder = P.map (decode . BSL.fromStrict . E.encodeUtf8)
 
+silentDecoder :: FromJSON a => Pipe T.Text a IO ()
+silentDecoder = decoder >-> skipNothings
+
 contents :: TChan a -> Producer a IO ()
 contents c = forever $ liftIO (atomically $ readTChan c) >>= yield
 
@@ -161,12 +164,3 @@ parseIRCLine line =
 
 toIRCLine :: IRCMsg -> T.Text
 toIRCLine = fromUTF8 . fromIRCMsg
-
-pong :: IRCMsg -> Maybe IRCMsg
-pong x
-  | msgCmd x == toUTF8 "PING" =
-      Just $ IRCMsg { msgPrefix = Nothing
-                    , msgCmd    = toUTF8 "PONG"
-                    , msgParams = []
-                    , msgTrail  = msgTrail x }
-pong _ = Nothing

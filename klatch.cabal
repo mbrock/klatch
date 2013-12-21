@@ -80,3 +80,35 @@ executable envoy
                  hscolour,
                  irc-bytestring,
                  attoparsec
+
+executable ponger
+  main-is: Klatch/Ponger/Main.hs
+  ghc-options: -Wall
+  build-depends: base,
+                 transformers,
+                 mtl,
+                 text,
+                 stm,
+                 containers,
+                 exceptions,
+                 bytestring,
+                 unix,
+                 uuid,
+                 time,
+                 aeson,
+                 amqp,
+                 pipes,
+                 pipes-concurrency,
+                 pipes-bytestring,
+                 pipes-parse,
+                 pipes-network,
+                 network-simple,
+                 ghc-prim,
+                 async,
+                 optparse-applicative,
+                 hslogger,
+                 old-locale,
+                 hscolour,
+                 directory,
+                 irc-bytestring,
+                 attoparsec
