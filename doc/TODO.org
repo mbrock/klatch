@@ -1,4 +1,39 @@
-* TODO Use one thread for stdout logging
-* TODO Parse IRC
-* TODO Respond to PING
-* TODO Stream events/commands to/from JavaScript
+* To do on Klatch
+
+** Make sure the serialization is sane
+Right now we're using Aeson's default serialization format, which
+isn't terrible, but it would be better to have it fully specified.
+
+*** Don't double-serialize JSON
+The arbitrary JSON payload of client events should have type Value in
+the Haskell code, so it can be serialized without quoting.
+
+** Use one thread for stdout logging
+Right now, simultaneous stdout log messages can become garbled.  It
+would probably be best to use an existing log framework, like
+hs-logger.
+
+** Improve ponger
+There's no need to reply to old PINGs.  On the other hand, we won't
+accumulate many old PINGs, since the server disconnects us if we don't
+reply, so this is probably not very important.  The worst case is that
+we send an extraneous PONG to a server right after bringing up the
+system.
+
+** Other types of workers
+*** Reconnect worker
+Sometimes connections fail.  When they do, it would be nice to try
+reconnecting automatically after a few seconds.  There's no upper
+bound to the cleverness possible, but a reasonable lower bound might
+be the ability to do N reconnection tries after every connection
+failure.
+
+*** Digest worker
+Some people might like to receive a daily email with the logs from a
+particular channel, for example.
+
+** Worker configuration
+It would be cool if workers could be configured and monitored via the
+web client.  This can probably be done using only client events.  The
+worker publishes a configuration specification using a known client
+tag.  The client exposes it to the user and logs her choices.
