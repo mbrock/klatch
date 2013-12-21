@@ -1,4 +1,4 @@
-@header-height: 22px;
+@header-height: 26px;
 @border-color: #888;
 @standard-border: 1px solid @border-color;
 @area-width: 660px;
@@ -78,6 +78,8 @@ article {
 
   background-color: #f3f3f3;
   border: @standard-border;
+  border-top: 0;
+  border-bottom: 0;
 
   &.minimized {
     opacity: 0.6;
@@ -85,11 +87,6 @@ article {
     border-width: 0 inherit 0 inherit;
 
     &:hover { opacity: 0.9 }
-
-    h1 {
-      position: relative;
-      border: 0;
-    }
 
     > div {
       display: none;
@@ -117,12 +114,10 @@ article {
 
   h1 {
     margin: 0;
-    height: @header-height;
-    padding-left: 1em;
-    line-height: 1.4;
+    padding-left: 8px;
+    line-height: @header-height;
     font-size: 16px;
     color: white;
-    border-bottom: @standard-border;
     font-weight: bold;
     text-transform: uppercase;
     letter-spacing: 2px;
@@ -137,6 +132,10 @@ article {
         top: 2px;
         content: "▲";
       }
+    }
+
+    span {
+      margin-left: 8px;
     }
   }
 
@@ -155,9 +154,10 @@ article {
     font: inherit;
     line-height: 1.5;
     margin-bottom: 0;
-    padding-left: 8px;
+    padding-left: 16px;
     border: 0;
     border-top: @standard-border;
+    border-bottom: @standard-border;
   }
 }
 

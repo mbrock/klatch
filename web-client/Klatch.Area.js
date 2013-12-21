@@ -68,7 +68,7 @@
       return <h1 style={style}>
         <a href="#" rel="toggle-area-minimization" title="Hide/show"></a>
         <a href="#" rel="mark-as-read" title="Mark as read">✔︎</a>
-        {name}
+        <span>{name}</span>
       </h1>;
     },
 
