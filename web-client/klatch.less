@@ -1,0 +1,176 @@
+body {
+  font-family: "Ubuntu Mono", "Anonymous Pro", monospace;
+  background-color: #ccc;
+  color: #333;
+  font-size: 16px;
+
+  > section {
+    width: 660px;
+    margin: 0 auto;
+  }
+}
+
+.timestamp {
+  display: block;
+  float: right;
+  color: #777;
+  margin-left: 1ex;
+  margin-bottom: 8px;
+  text-align: right;
+  font-size: 80%;
+}
+
+.server-key {
+  color: grey;
+  width: 10em;
+  margin-right: 1ex;
+}
+
+.command {
+  display: inline-block;
+  color: maroon;
+  margin-right: 2ex;
+  width: 8ex;
+  text-align: right;
+}
+
+.trail {
+}
+
+section > div {
+  margin-bottom: 8px;
+}
+
+p {
+  display: block;
+  margin: 0;
+
+  > span {
+    display: inline-block;
+    line-height: 1.2;
+  }
+
+  > cite {
+    display: block;
+    padding-left: 20px;
+    margin-top: 4px;
+    margin-bottom: 6px;
+    font-weight: bold;
+    font-style: normal;
+    font-size: 14px;
+  }
+}
+
+article {
+  display: block;
+  overflow-y: scroll;
+  float: left;
+
+  width: 660px;
+  height: 380px;
+
+  margin-right: 5px;
+  margin-bottom: 6px;
+  padding: 0;
+
+  background-color: #f3f3f3;
+  border: 1px solid #555;
+
+  &.minimized {
+    opacity: 0.4;
+    height: auto;
+
+    &:hover { opacity: 0.9 }
+
+    h1 {
+      position: relative;
+      border: 0;
+    }
+
+    > section {
+      display: none;
+    }
+
+    a[rel=toggle-area-minimization] {
+      content: "▼";
+    }
+  }
+
+  section {
+    padding: 10px;
+    padding-top: 35px;
+  }
+
+  h1 {
+    position: absolute;
+    margin: 0;
+    padding-left: 1em;
+    padding-right: 1em;
+    line-height: 1.4;
+    font-size: 16px;
+    color: white;
+    background-color: #aaa;
+    border: 0px solid #888;
+    border-width: 0 1px 1px 0;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+
+    a {
+      color: white;
+      text-decoration: none;
+      margin-right: 8px;
+
+      &[rel=toggle-area-minimization]:before {
+        position: relative;
+        top: 2px;
+        content: "▲";
+      }
+    }
+  }
+
+  hr {
+    height: 2px;
+    border: none;
+    background-color: #aaa;
+
+    & + hr { display: none }
+  }
+
+  .input {
+    box-sizing: border-box;
+    width: 100%;
+    outline: none;
+    font: inherit;
+    line-height: 1.5;
+
+    border: 0;
+    margin-bottom: 0;
+    padding-left: 8px;
+    border-top: 1px solid #aaa;
+  }
+}
+
+div.replaying {
+  width: 100%;
+  text-align: center;
+
+  span {
+    position: relative;
+    top: -18px;
+    display: inline-block;
+    height: 16px;
+    background-color: royalblue;
+  }
+}
+
+@-webkit-keyframes fade-in {
+  0%   { opacity: 0 }
+  100% { opacity: 1 }
+}
+
+.area-splitter {
+  -webkit-animation-name: fade-in;
+  -webkit-animation-timing-function: ease-in;
+  -webkit-animation-duration: 0.4s;
+}
