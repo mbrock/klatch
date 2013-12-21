@@ -40,7 +40,7 @@ stream c = do
   liftIO $ writeLog "Accepting web visitor."
   forever $ do
     x <- liftIO . atomically $ readTChan c'
-    liftIO $ threadDelay (truncate $ 1000000.0/200.0)
+    liftIO $ threadDelay (truncate $ 1000000.0/400.0)
     C.yield $ makeServerEvent (encode x)
 
 makeServerEvent :: ByteString -> ServerEvent
