@@ -113,10 +113,29 @@
       });
 
       var isChannel = this.props.name.match(/^#/);
+      return isChannel ?
+                 <Channel name={this.props.name}
+                          messages={messages} />
+               : <Boring name={this.props.name}
+                         messages={messages} />;
+    }
+  });
 
-      return (<article className={ isChannel ? 'channel' : 'boring' }>
+  var Channel = React.createClass({
+    render: function () {
+      return (<article className="channel">
                <h1>{this.props.name}</h1>
-               <section>{messages}</section>
+               <section>{this.props.messages}</section>
+               <input className="input" type="text" />
+              </article>);
+    }
+  });
+
+  var Boring = React.createClass({
+    render: function () {
+      return (<article className="boring">
+               <h1>{this.props.name}</h1>
+               <section>{this.props.messages}</section>
               </article>);
     }
   });

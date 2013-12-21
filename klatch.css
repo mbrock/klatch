@@ -91,7 +91,7 @@ article h1 {
 }
 
 article:hover {
-  background-color: #fafafa;
+  background-color: #f3f3f3;
   border-color: #555;
 }
 
@@ -126,4 +126,17 @@ span.replaying {
   -webkit-animation-name: fade-in;
   -webkit-animation-timing-function: ease-in;
   -webkit-animation-duration: 0.4s;
+}
+
+.channel .input {
+  box-sizing: border-box;
+  width: 100%;
+  outline: none;
+  font: inherit;
+  line-height: 1.5;
+
+  border: 0;
+  margin-bottom: 0;
+  padding-left: 8px;
+  border-top: 1px solid #aaa;
 }
