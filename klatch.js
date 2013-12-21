@@ -128,6 +128,11 @@
                <section>{this.props.messages}</section>
                <input className="input" type="text" />
               </article>);
+    },
+
+    componentDidMount: function (node) {
+      $(node).scrollTop($("section", node).height() + 10);
+      $("input", node).focus();
     }
   });
 
@@ -137,6 +142,10 @@
                <h1>{this.props.name}</h1>
                <section>{this.props.messages}</section>
               </article>);
+    },
+
+    componentDidMount: function (node) {
+      $(node).scrollTop($("section", node).height() + 10);
     }
   });
 
