@@ -1,6 +1,6 @@
 {-# LANGUAGE TupleSections, OverloadedStrings #-}
 
-module Klatch.Common.AMQP (startAmqp, Role (EnvoyRole, EmbassyRole)) where
+module Klatch.Common.AMQP (startAmqp, Role (..)) where
 
 import Klatch.Envoy.Queue
 import Klatch.Common.Params
@@ -20,69 +20,85 @@ import qualified Data.Text.Lazy.Encoding    as LE
 import qualified Data.Text.Lazy             as TL
 import qualified Data.Map                   as Map
 
-data Role = EnvoyRole | EmbassyRole
+data Role = EnvoyRole | EmbassyRole | PluginRole Text
 
 startAmqp :: Role -> IO (Queue, Async ())
 startAmqp role = getAmqpParameters role >>= connect role
 
 defaults :: Role -> ParamSpec
 defaults role =
-  Map.fromList [ ("ENVOY_AMQP_HOST"        , Just "127.0.0.1")
-               , ("ENVOY_AMQP_VHOST"       , Just "/")
-               , ("ENVOY_AMQP_USER"        , Just "guest")
-               , ("ENVOY_AMQP_PASSWORD"    , Just "guest")
-               , ("ENVOY_AMQP_IN_QUEUE"    , Just "envoy-in")
-               , ("ENVOY_AMQP_OUT_QUEUE"   , Just "envoy-out")
-               , ("ENVOY_AMQP_EXCHANGE"    , Just "klatch")
-               , ("ENVOY_AMQP_BINDING_KEY" , Just (getBindingKey role)) ]
+  Map.fromList [ ("ENVOY_AMQP_HOST"         , Just "127.0.0.1")
+               , ("ENVOY_AMQP_VHOST"        , Just "/")
+               , ("ENVOY_AMQP_USER"         , Just "guest")
+               , ("ENVOY_AMQP_PASSWORD"     , Just "guest")
+               , ("ENVOY_AMQP_QUEUE"        , Just (getQueue role))
+               , ("ENVOY_AMQP_IN_EXCHANGE"  , Just (getInExchange role))
+               , ("ENVOY_AMQP_OUT_EXCHANGE" , Just (getOutExchange role))
+               , ("ENVOY_AMQP_BINDING_KEY"  , Just (getBindingKey role)) ]
+
+getQueue :: Role -> Text
+getQueue EnvoyRole      = "commands"
+getQueue EmbassyRole    = "events"
+getQueue (PluginRole s) = s
 
 getBindingKey :: Role -> Text
-getBindingKey EnvoyRole   = "envoy"
-getBindingKey EmbassyRole = "embassy"
+getBindingKey = const ""
+
+getInExchange :: Role -> Text
+getInExchange EnvoyRole      = "envoy"
+getInExchange EmbassyRole    = "embassy"
+getInExchange (PluginRole _) = "embassy"
+
+getOutExchange :: Role -> Text
+getOutExchange EnvoyRole      = "embassy"
+getOutExchange EmbassyRole    = "envoy"
+getOutExchange (PluginRole _) = "envoy"
+
+inExchangeType :: Role -> Text
+inExchangeType EnvoyRole = "direct"
+inExchangeType _         = "fanout"
+
+outExchangeType :: Role -> Text
+outExchangeType EnvoyRole = "fanout"
+outExchangeType _         = "direct"
 
 getAmqpParameters :: Role -> IO Params
 getAmqpParameters r = getParameters "AMQP" (defaults r)
 
-getInQueue :: Role -> Params -> Text
-getInQueue EnvoyRole   = (! "ENVOY_AMQP_IN_QUEUE")
-getInQueue EmbassyRole = (! "ENVOY_AMQP_OUT_QUEUE")
-
-getOutQueue :: Role -> Params -> Text
-getOutQueue EnvoyRole   = getInQueue EmbassyRole
-getOutQueue EmbassyRole = getInQueue EnvoyRole
-
 connect :: Role -> Params -> IO (Queue, Async ())
 connect role params = do
-  let host       = params ! "ENVOY_AMQP_HOST"
-      vhost      = params ! "ENVOY_AMQP_VHOST"
-      user       = params ! "ENVOY_AMQP_USER"
-      password   = params ! "ENVOY_AMQP_PASSWORD"
-      inQueue    = getInQueue role params
-      outQueue   = getOutQueue role params
-      exchange   = params ! "ENVOY_AMQP_EXCHANGE"
-      bindingKey = params ! "ENVOY_AMQP_BINDING_KEY"
+  let host        = params ! "ENVOY_AMQP_HOST"
+      vhost       = params ! "ENVOY_AMQP_VHOST"
+      user        = params ! "ENVOY_AMQP_USER"
+      password    = params ! "ENVOY_AMQP_PASSWORD"
+      inExchange  = getInExchange role
+      outExchange = getOutExchange role
+      queue       = params ! "ENVOY_AMQP_QUEUE"
+      bindingKey  = params ! "ENVOY_AMQP_BINDING_KEY"
 
   conn <- openConnection (unpack host) vhost user password
   chan <- openChannel conn
 
-  void $ declareQueue chan newQueue { queueName = inQueue }
-  void $ declareQueue chan newQueue { queueName = outQueue }
+  void $ declareQueue chan newQueue { queueName = queue }
+  void $ declareExchange chan newExchange {
+                        exchangeName = inExchange
+                      , exchangeType = inExchangeType role }
+  void $ declareExchange chan newExchange {
+                        exchangeName = outExchange
+                      , exchangeType = outExchangeType role }
 
-  void $ declareExchange chan newExchange { exchangeName = exchange
-                                          , exchangeType = "direct" }
-
-  bindQueue chan outQueue exchange bindingKey
+  bindQueue chan queue inExchange bindingKey
 
   queueChan <- newTChanIO
 
   let report = atomically . writeTChan queueChan . readMsg
       onMsg (msg, env) = report msg >> ackEnv env
 
-  void $ consumeMsgs chan inQueue Ack onMsg
+  void $ consumeMsgs chan queue Ack onMsg
 
   outputChan <- newTChanIO
   writer <- async . runEffect . for (contents outputChan) $
-    liftIO . publishMsg chan exchange bindingKey . makeMsg
+    liftIO . publishMsg chan outExchange bindingKey . makeMsg
 
   return $ (Queue queueChan (writeTChan outputChan), writer)
 
