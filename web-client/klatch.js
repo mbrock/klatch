@@ -28,6 +28,13 @@
         h = h % 37;
       }
       return h / 37.0;
+    },
+
+    assignColor: function (s) {
+      var scalar = this.scalarHash(s);
+      var colors = ["#b58900", "#cb4b16", "#dc322f", "#d33682",
+                    "#6c71c4", "#268bd2", "#2aa198", "#859900"];
+      return colors[Math.round(scalar * colors.length)];
     }
   };
 
@@ -236,9 +243,7 @@
 
   var AreaHeader = React.createClass({
     render: function () {
-      var style = {
-        "background-color": this.calculateColor()
-      };
+      var style = { "background-color": this.calculateColor() };
 
       return <h1 style={style}>
         <a href="#" rel="toggle-area-minimization" title="Hide/show"></a>
@@ -248,10 +253,7 @@
     },
 
     calculateColor: function () {
-      var scalar = CleverStuff.scalarHash(this.props.name);
-      var colors = ["#b58900", "#cb4b16", "#dc322f", "#d33682",
-                    "#6c71c4", "#268bd2", "#2aa198", "#859900"];
-      return colors[Math.round(scalar * colors.length)];
+      return CleverStuff.assignColor(this.props.name);
     },
 
     componentDidMount: function (node) {
@@ -342,7 +344,12 @@
 
   var Utterance = React.createClass({
     render: function () {
-      var source = this.props.by ? <cite>{this.props.by}</cite> : null;
+      var source, citeStyle;
+
+      if (this.props.by) {
+        citeStyle = { color: CleverStuff.assignColor(this.props.by) };
+        source = <cite style={citeStyle}>{this.props.by}</cite>;
+      }
       return <p>{source}<span>{this.props.text}</span></p>;
     }
   });
