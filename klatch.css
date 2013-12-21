@@ -3,7 +3,6 @@ body {
   background-color: #f6f6f6;
 }
 
-
 .timestamp {
   display: block;
   float: right;
@@ -22,7 +21,7 @@ body {
 
 .command {
   display: inline-block;
-  color: salmon;
+  color: maroon;
   margin-right: 2ex;
   width: 8ex;
   text-align: right;
@@ -103,4 +102,28 @@ article:hover h1 {
 article section {
   padding: 10px;
   padding-top: 35px;
+}
+
+div.replaying {
+  width: 100%;
+  text-align: center;
+}
+
+span.replaying {
+  position: relative;
+  top: -18px;
+  display: inline-block;
+  height: 4px;
+  background-color: salmon;
+}
+
+@-webkit-keyframes fade-in {
+  0%   { opacity: 0 }
+  100% { opacity: 1 }
+}
+
+.area-splitter {
+  -webkit-animation-name: fade-in;
+  -webkit-animation-timing-function: ease-in;
+  -webkit-animation-duration: 0.4s;
 }

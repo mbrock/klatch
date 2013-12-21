@@ -3,26 +3,27 @@
 (function () {
   var Viewer = React.createClass({
     getInitialState: function () {
-      return { replaying: 0, messages: { } };
+      return { replaying: 0, replayed: 0, messages: { } };
     },
 
     render: function () {
-      if (this.state.replaying > 0)
-        return <Replaying count={this.state.replaying} />;
-      else
+      if (this.state.replaying > 0) {
+        var progress = this.state.replayed / this.state.replaying;
+        return <Replaying progress={progress} />;
+      } else
         return <AreaSplitter messages={this.state.messages} />;
     },
 
-    updateReplayCount: function () {
-      if (this.state.replaying)
-        return this.state.replaying - 1;
+    updateReplayCount: function (isMetamessage) {
+      if (this.state.replaying && !isMetamessage)
+        return this.state.replayed + 1;
       else
-        return this.state.replaying;
+        return this.state.replayed;
     },
 
     recordMessage: function (message) {
       var messages;
-      var replaying;
+      var replaying, replayed;
       var isMetamessage = message.sequence === -1;
       var source;
       var name;
@@ -31,6 +32,7 @@
       if (message.payload.tag === 'Replaying') {
         messages = this.state.messages;
         replaying = message.payload.contents;
+        replayed = 0;
       }
 
       else if (message.payload.tag === 'Received') {
@@ -47,16 +49,23 @@
 
         messages = Object.create(this.state.messages);
         messages[source] = (messages[source] || []).concat(message);
+        replaying = this.state.replaying;
+        replayed = this.updateReplayCount(isMetamessage);
       }
 
       else {
         messages = this.state.messages;
         replaying = this.state.replaying;
+        replayed = this.updateReplayCount(isMetamessage);
       }
+
+      if (replayed === replaying)
+        replayed = replaying = 0;
 
       this.setState({
         messages: messages,
-        replaying: isMetamessage ? replaying : this.updateReplayCount()
+        replaying: replaying,
+        replayed: replayed
       });
     }
   });
@@ -72,7 +81,7 @@
                          messages={this.props.messages[source]} />);
       }
 
-      return <div>{areas}</div>;
+      return <div className="area-splitter">{areas}</div>;
     }
   });
 
@@ -84,7 +93,6 @@
       var i = 0;
 
       var messages = this.props.messages.map(function (message) {
-        console.log(message.payload.contents);
 
         if (message.payload.contents[1] &&
             message.payload.contents[1].msgPrefix &&
@@ -115,10 +123,13 @@
 
   var Replaying = React.createClass({
     render: function () {
+      var curve = Math.pow(this.props.progress, 1.7);
+      var ratio = curve * 100;
+      var style = { width: (100 - ratio) + "%"};
       return (
-        <span className="replaying">
-          Replaying {this.props.count} events...
-        </span>
+        <div className="replaying">
+          <span className="replaying" style={style}></span>
+        </div>
       );
     }
   });
@@ -186,7 +197,6 @@
 
       if (msg.msgCmd === 'PRIVMSG') {
         if (msg.msgPrefix && msg.msgPrefix.Left) {
-          console.log("naw %o", msg.msgPrefix);
           source = this.props.sourceDiffers ? msg.msgPrefix.Left.userNick : null;
         }
         content = <Utterance by={source} text={msg.msgTrail} />;

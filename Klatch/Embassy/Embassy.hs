@@ -2,11 +2,12 @@
 
 module Main where
 
+import Control.Concurrent            (threadDelay)
 import Control.Concurrent.Async      (async, link)
 import Control.Concurrent.STM        (atomically)
 import Control.Concurrent.STM.TChan
 import Control.Concurrent.STM.TVar
-import Control.Monad                 (forever, when)
+import Control.Monad                 (forever, when, forM_)
 import Control.Monad.IO.Class        (liftIO)
 import Data.Text                     (Text)
 import Pipes                         (Pipe, Producer, (>->),

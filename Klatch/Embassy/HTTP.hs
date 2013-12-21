@@ -6,6 +6,7 @@ import Klatch.Common.Types
 import Klatch.Common.Util
 
 import Blaze.ByteString.Builder.ByteString (fromLazyByteString)
+import Control.Concurrent                  (threadDelay)
 import Control.Concurrent.STM              (atomically)
 import Control.Concurrent.STM.TChan        (TChan, cloneTChan, readTChan)
 import Control.Monad                       (forever)
@@ -39,6 +40,7 @@ stream c = do
   liftIO $ writeLog "Accepting web visitor."
   forever $ do
     x <- liftIO . atomically $ readTChan c'
+    liftIO $ threadDelay (truncate $ 1000000.0/200.0)
     C.yield $ makeServerEvent (encode x)
 
 makeServerEvent :: ByteString -> ServerEvent
