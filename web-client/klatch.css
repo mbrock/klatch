@@ -155,3 +155,35 @@ article hr {
   border: none;
   background-color: #aaa;
 }
+
+article hr + hr {
+  display: none;
+}
+
+a[rel=toggle-area-minimization] {
+  text-decoration: none;
+  margin-right: 8px;
+}
+
+a[rel=toggle-area-minimization]:before {
+  position: relative;
+  top: 2px;
+  content: "▲";
+}
+
+article.minimized a[rel=toggle-area-minimization]:before {
+  content: "▼";
+}
+
+article.minimized {
+  height: auto;
+}
+
+article.minimized h1 {
+  position: relative;
+  border: 0;
+}
+
+article.minimized > section {
+  display: none;
+}

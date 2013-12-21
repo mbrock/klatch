@@ -80,7 +80,12 @@
 
   var Viewer = React.createClass({
     getInitialState: function () {
-      return { replaying: 0, replayed: 0, messages: { } };
+      return {
+        replaying: 0,
+        replayed: 0,
+        messages: { },
+        areaMinimization: { }
+      };
     },
 
     render: function () {
@@ -88,7 +93,8 @@
         var progress = this.state.replayed / this.state.replaying;
         return <Replaying progress={progress} />;
       } else
-        return <AreaSplitter messages={this.state.messages} />;
+        return <AreaSplitter messages={this.state.messages}
+                             areaMinimization={this.state.areaMinimization} />;
     },
 
     updateReplayCount: function (isMetamessage) {
@@ -100,62 +106,66 @@
 
     recordMessage: function (data) {
       var message = new MessageModel(data);
-      var messages;
-      var replaying, replayed;
+      var messages = this.state.messages;
+      var newMessages = {};
+      var update = {};
       var source;
-      var name;
-      var cmd;
 
       if (message.payload.tag === 'Replaying') {
-        messages = this.state.messages;
-        replaying = message.contents;
-        replayed = 0;
+        update.replaying = message.contents;
+        update.replayed = 0;
+      }
+
+      else if (message.payload.tag === 'Streaming') {
+        update.replaying = update.replayed = 0;
       }
 
       else if (message.payload.tag === 'Received') {
         source = message.getNameForArea();
 
-        messages = Object.create(this.state.messages);
-        messages[source] = (messages[source] || []).concat(message);
-        replaying = this.state.replaying;
-        replayed = this.updateReplayCount(message.isMeta);
+        newMessages[source] = (messages[source] || []).concat(message);
+        update.messages = $.extend({}, messages, newMessages);
+
+        update.replayed = this.updateReplayCount(message.isMeta);
       }
 
       else if (message.payload.tag === 'ClientEvent') {
-        messages = this.handleClientEvent(message.data.tag, message);
-        replaying = this.state.replaying;
-        replayed = this.updateReplayCount(false);
+        update = this.handleClientEvent(message.data.tag, message);
       }
 
       else {
-        messages = this.state.messages;
-        replaying = this.state.replaying;
-        replayed = this.updateReplayCount(message.isMeta);
+        update.replayed = this.updateReplayCount(message.isMeta);
       }
 
-      if (replayed === replaying)
-        replayed = replaying = 0;
-
-      this.setState({
-        messages: messages,
-        replaying: replaying,
-        replayed: replayed
-      });
+      var nextState = $.extend({}, this.state, update);
+      this.setState(nextState);
     },
 
     handleClientEvent: function (tag, message) {
-      var messages;
-      var source;
+      var messages = {};
+      var areaMinimization = {};
 
       if (tag === 'mark-as-read') {
         source = message.data.area;
-        messages = Object.create(this.state.messages);
-        messages[source] = (messages[source] || []).concat(message);
+        messages[source] = (this.state.messages[source] || []).concat(message);
+
+      } else if (tag === 'toggle-area-minimization') {
+        source = message.data.area;
+        areaMinimization[source] = !this.state.areaMinimization[source];
+
       } else {
         console.log("Unrecognized client event '%o': %o", tag, message);
       }
 
-      return messages;
+      return {
+        messages:
+          $.extend({}, this.state.messages, messages),
+
+        areaMinimization:
+          $.extend({}, this.state.areaMinimization, areaMinimization),
+
+        replayed: this.updateReplayCount(false)
+      };
     }
   });
 
@@ -180,7 +190,8 @@
       for (source in this.props.messages) {
         messages = this.props.messages[source];
         areas.push(<Area name={source}
-                         messages={this.props.messages[source]} />);
+                         messages={this.props.messages[source]}
+                         minimized={this.props.areaMinimization[source]} />);
       }
 
       return <div className="area-splitter">{areas}</div>;
@@ -215,8 +226,10 @@
       var isChannel = this.props.name.match(/^#/);
       return isChannel ?
                  <Channel name={this.props.name}
+                          minimized={this.props.minimized}
                           messages={messages} />
                : <Boring name={this.props.name}
+                         minimized={this.props.minimized}
                          messages={messages} />;
     }
   });
@@ -228,6 +241,7 @@
       };
 
       return <h1 style={style}>
+        <a href="#" rel="toggle-area-minimization"></a>
         {this.props.name}
         (<a href="#" rel="mark-as-read">Mark as read</a>)
       </h1>;
@@ -249,12 +263,21 @@
           server: self.props.server
         });
       });
+
+      $("a[rel=toggle-area-minimization]", node).click(function () {
+        Klatch.saveClientEvent({
+          tag: 'toggle-area-minimization',
+          area: self.props.name
+        });
+      });
     }
   });
 
   var Channel = React.createClass({
     render: function () {
-      return (<article className="channel">
+      var visibility = this.props.minimized ? ' minimized' : '';
+
+      return (<article className={"channel" + visibility}>
                <AreaHeader name={this.props.name} />
                <section>{this.props.messages}</section>
                <input className="input" type="text" />
@@ -269,8 +292,11 @@
 
   var Boring = React.createClass({
     render: function () {
-      return (<article className="boring">
-               <AreaHeader name={this.props.name} />
+      var visibility = this.props.minimized ? ' minimized' : '';
+
+      return (<article className={"boring" + visibility}>
+               <AreaHeader name={this.props.name}
+                           minimized={this.props.minimized} />
                <section>{this.props.messages}</section>
               </article>);
     },
