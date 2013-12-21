@@ -1,2 +1,2 @@
 #!/bin/bash
-./with-defaults.sh cabal run embassy
+bin/with-defaults.sh cabal run embassy
