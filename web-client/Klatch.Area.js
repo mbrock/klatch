@@ -1,8 +1,9 @@
 /** @jsx React.DOM */
 
 (function () {
-  var IRCMessage = Klatch.IRCMessage;
-  var Message = Klatch.Message;
+  var IRCMessage   = Klatch.IRCMessage;
+  var Message      = Klatch.Message;
+  var ErrorMessage = Klatch.ErrorMessage;
   var MarkedAsRead = Klatch.MarkedAsRead;
 
   var Area = Klatch.Area = React.createClass({
@@ -24,15 +25,24 @@
           return <IRCMessage message={message}
                              sourceDiffers={sourceDiffers || !(i++ % 5)}
                              key={message.sequence} />;
+
+        else if (message.payload.tag === "Error")
+          return <ErrorMessage message={message} key={message.sequence} />;
+
         else if (message.clientEventTag === 'mark-as-read')
-          return <MarkedAsRead />;
+          return <MarkedAsRead key={message.sequence} />;
+
         else
           return <Message message={message} key={message.sequence} />;
       });
 
-      var isChannel = this.props.name.match(/^#/);
+      var isChannel = this.props.name.match(/^(#.*) \((.*)\)$/);
+      var descriptor = isChannel
+        ? { name: isChannel[1], server: isChannel[2] }
+        : null;
+
       return isChannel ?
-                 <Channel name={this.props.name}
+                 <Channel area={descriptor}
                           minimized={this.props.minimized}
                           messages={messages} />
                : <Boring name={this.props.name}
@@ -106,23 +116,13 @@
                     <section className="area-content">
                      {this.props.messages}
                     </section>
-                    <input className="input" type="text" />
+                    <InputBar area={this.props.area} />
                    </div>;
 
       return (<article className={"area channel" + visibility}>
-               <AreaHeader name={this.props.name} />
+               <AreaHeader name={this.props.area.name} />
                {messages}
               </article>);
-    },
-
-    componentDidMount: function (node) {
-      $("input", node).focus();
-
-      var lastReadMarker = $("hr", node).last();
-      if (lastReadMarker[0]) {
-        // how to make this work properly?
-        $("section", node).scrollTop(100000);
-      }
     }
   });
 
@@ -144,5 +144,27 @@
                {messages}
               </article>);
     },
+  });
+
+  var InputBar = Klatch.InputBar = React.createClass({
+    render: function () {
+      return <input className="input" type="text" tabIndex="0" />;
+    },
+
+    componentDidMount: function (node) {
+      $(node).keydown(this.handleKey.bind(this, $(node)));
+    },
+
+    handleKey: function (node, e) {
+      if (e.keyCode === 13) {
+        this.handleCommand(node.val());
+        node.val("");
+      }
+    },
+
+    handleCommand: function (text) {
+      var msg = "PRIVMSG " + this.props.area.name + " :" + text;
+      Klatch.sendCommand('Send', this.props.area.server, msg);
+    }
   });
 })();

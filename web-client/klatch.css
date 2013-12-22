@@ -21,6 +21,7 @@ body > section {
   font-size: 80%;
 }
 .server-key {
+  font-weight: bold;
   color: grey;
   width: 10em;
   margin-right: 1ex;
@@ -29,8 +30,14 @@ body > section {
   display: inline-block;
   color: maroon;
   margin-right: 2ex;
-  width: 8ex;
+  width: 10ex;
   text-align: right;
+}
+.error-message .command {
+  color: #cc0000;
+}
+.error-message .trail {
+  font-style: italic;
 }
 section > div {
   margin-bottom: 8px;

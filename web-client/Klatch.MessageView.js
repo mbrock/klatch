@@ -31,6 +31,19 @@
     }
   });
 
+  Klatch.ErrorMessage = React.createClass({
+    render: function () {
+      return <div className="error-message">
+               <Timestamp t={this.props.message.timestamp} />
+               <span>
+                 <ServerKey name={this.props.message.contents[0]} />
+                 <Command command="(error)" />
+                 <Trail text={this.props.message.contents[1]} />
+               </span>
+             </div>;
+    }
+  });
+
   Klatch.Message = React.createClass({
     render: function () {
       return <div>

@@ -11,6 +11,13 @@
         tag: 'SaveClientEvent',
         contents: [Klatch.ClientTag, JSON.stringify(event)]
       }));
+    },
+
+    sendCommand: function (tag) {
+      return $.post('/', JSON.stringify({
+        tag: tag,
+        contents: [].slice.call(arguments, 1)
+      }));
     }
   };
 })();

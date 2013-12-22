@@ -46,7 +46,8 @@
         update.replaying = update.replayed = 0;
       }
 
-      else if (message.payload.tag === 'Received') {
+      else if (message.payload.tag === 'Received' ||
+               message.payload.tag === 'Error') {
         source = message.getNameForArea();
 
         newMessages[source] = (messages[source] || []).concat(message);

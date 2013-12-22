@@ -28,6 +28,7 @@ body {
 }
 
 .server-key {
+  font-weight: bold;
   color: grey;
   width: 10em;
   margin-right: 1ex;
@@ -37,11 +38,18 @@ body {
   display: inline-block;
   color: maroon;
   margin-right: 2ex;
-  width: 8ex;
+  width: 10ex;
   text-align: right;
 }
 
-.trail {
+.error-message {
+  .command {
+    color: darken(red, 10%);
+  }
+
+  .trail {
+    font-style: italic;
+  }
 }
 
 section > div {

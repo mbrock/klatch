@@ -34,7 +34,7 @@
     if (msg.msgPrefix && msg.msgPrefix.Right) {
       return msg.msgPrefix.Right;
     } else if (msg.msgCmd === 'PRIVMSG') {
-      return msg.msgParams[0];
+      return msg.msgParams[0] + ' (' + this.contents[0] + ')';
     } else {
       return '*Server*';
     }
