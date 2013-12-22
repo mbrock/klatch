@@ -19,8 +19,7 @@ main = do
   (amqp, _) <- startAmqp (PluginRole "ponger")
 
   runEffect $
-    readFrom amqp >-> loggingReads  >-> silentDecoder
-                  >-> ponger        >-> encoder
+    readFrom amqp >-> silentDecoder >-> ponger >-> encoder
                   >-> loggingWrites >-> writeTo amqp
 
 ponger :: Pipe RawEvent Command IO ()
