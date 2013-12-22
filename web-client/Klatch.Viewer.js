@@ -63,8 +63,7 @@
         update.replayed = this.updateReplayCount(message.isMeta);
       }
 
-      var nextState = $.extend({}, this.state, update);
-      this.setState(nextState);
+      this.setState(update);
     },
 
     handleClientEvent: function (tag, message) {
