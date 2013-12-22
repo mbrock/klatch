@@ -7,14 +7,14 @@
 
     saveClientEvent: function (event) {
       event.version = Klatch.ClientVersion;
-      return $.post('/', JSON.stringify({
+      return $.post('/api/command', JSON.stringify({
         tag: 'SaveClientEvent',
         contents: [Klatch.ClientTag, JSON.stringify(event)]
       }));
     },
 
     sendCommand: function (tag) {
-      return $.post('/', JSON.stringify({
+      return $.post('/api/command', JSON.stringify({
         tag: tag,
         contents: [].slice.call(arguments, 1)
       }));

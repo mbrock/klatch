@@ -34,18 +34,25 @@ run c q = liftIO $ do
   writeLog $ "Starting web server on " ++ bolded url
   Warp.run port
     . gzip def
-    . staticPolicy (policy index >-> noDots)
-    $ getOrPost (eventSourceAppSource $ stream c)
-                (handleClientEvents q)
+    . onlyGET (staticPolicy (policy index >-> noDots))
+    . streamEvents c
+    $ handleClientCommands q
 
 index :: String -> Maybe String
 index "" = Just "web-client/Klatch.html"
 index s  = Just ("web-client/" ++ s)
 
-handleClientEvents :: TChan Command -> Application
-handleClientEvents q req = do
+streamEvents :: TChan ParsedEvent -> Middleware
+streamEvents c app req =
+  case (requestMethod req, pathInfo req) of
+    (m, ["api", "events"]) | m == methodGet ->
+      eventSourceAppSource (stream c) req
+    _ -> app req
+
+handleClientCommands :: TChan Command -> Application
+handleClientCommands q req = do
   case pathInfo req of
-    ["api", "events"] -> do
+    ["api", "command"] -> do
         x <- lazyRequestBody req
         case decode x of
           Just cmd -> do
@@ -54,11 +61,6 @@ handleClientEvents q req = do
           Nothing ->
             return (responseLBS imATeaPot418 [] LBS.empty)
     _ -> return (responseLBS notFound404 [] LBS.empty)
-
-getOrPost :: Application -> Application -> Application
-getOrPost g _ req | requestMethod req == methodGet  = g req
-getOrPost _ p req | requestMethod req == methodPost = p req
-getOrPost g _ req                                   = g req
 
 stream :: TChan ParsedEvent -> C.Source IO ServerEvent
 stream c = do
@@ -71,3 +73,7 @@ stream c = do
 
 makeServerEvent :: ByteString -> ServerEvent
 makeServerEvent bs = ServerEvent Nothing Nothing [fromLazyByteString bs]
+
+onlyGET :: Middleware -> Middleware
+onlyGET f app req | requestMethod req == methodGet = f app req
+                  | otherwise                      = app req
