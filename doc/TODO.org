@@ -1,35 +1,30 @@
 * To do on Klatch
 
-** Investigate socket reading
+** Server stuff
+
+*** Investigate socket reading
 There might be a bug where lines are broken up incorrectly.  This
 probably has to do with the Pipes.ByteString stuff.
 
-** Are we using AMQP channels correctly?
+*** Are we using AMQP channels correctly?
 Manning's RabbitMQ book suggests that channels can only be used by
 one thread at a time.  I'm not sure what this means in the presence
 of GHC green threads.
 
-** Make sure the serialization is sane
-Right now we're using Aeson's default serialization format, which
-isn't terrible, but it would be better to have it fully specified.
-
-*** Don't double-serialize JSON
-The arbitrary JSON payload of client events should have type Value in
-the Haskell code, so it can be serialized without quoting.
-
-** Use one thread for stdout logging
+*** Use one thread for stdout logging
 Right now, simultaneous stdout log messages can become garbled.  It
 would probably be best to use an existing log framework, like
 hs-logger.
 
-** Improve ponger
+** Workers
+
+*** Improve ponger
 There's no need to reply to old PINGs.  On the other hand, we won't
 accumulate many old PINGs, since the server disconnects us if we don't
 reply, so this is probably not very important.  The worst case is that
 we send an extraneous PONG to a server right after bringing up the
 system.
 
-** Other types of workers
 *** Reconnect worker
 Sometimes connections fail.  When they do, it would be nice to try
 reconnecting automatically after a few seconds.  There's no upper
@@ -41,8 +36,42 @@ failure.
 Some people might like to receive a daily email with the logs from a
 particular channel, for example.
 
-** Worker configuration
+*** Workers sending events
+It's asymmetrical that only the envoy is capable of sending events
+(except as ``client events'').  Right now, workers are structured like
+the embassy: they receive events and send commands.  But we could also
+have envoy-like workers.
+
+This opens up a whole cosmos of grand opportunities: how about a
+worker that provides shell access, for example?
+
+** Protocol stuff
+
+*** Make sure the serialization is sane
+Right now we're using Aeson's default serialization format, which
+isn't terrible, but it would be better to have it fully specified.
+
+**** Don't double-serialize JSON
+The arbitrary JSON payload of client events should have type Value in
+the Haskell code, so it can be serialized without quoting.
+
+*** Worker configuration
 It would be cool if workers could be configured and monitored via the
 web client.  This can probably be done using only client events.  The
 worker publishes a configuration specification using a known client
 tag.  The client exposes it to the user and logs her choices.
+
+** Client stuff
+
+*** Commands
+There should be a declarative system for user commands, so we can do
+completion and interactive help.  To start, just CONNECT, JOIN, and
+PRIVMSG are enough.
+
+*** Make a wonderful text input component
+Obviously a fancy IRC client needs a fancy input box.  At least it
+should do tab completion.  Helping with commands would also be nice.
+
+*** Fix the timestamp & nick collapsing
+The timestamp should simply appear every five minutes or so.
+Nicknames when different or when same perhaps ten seconds.
