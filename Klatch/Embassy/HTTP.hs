@@ -17,7 +17,7 @@ import Network.HTTP.Types
 import Network.Wai
 import Network.Wai.EventSource
 import Network.Wai.Middleware.Gzip         (gzip, def)
-import Network.Wai.Middleware.Static       (staticPolicy, noDots)
+import Network.Wai.Middleware.Static
 
 import qualified Data.Conduit as C
 import qualified Network.Wai.Handler.Warp as Warp
@@ -34,19 +34,26 @@ run c q = liftIO $ do
   writeLog $ "Starting web server on " ++ bolded url
   Warp.run port
     . gzip def
-    . staticPolicy noDots
+    . staticPolicy (policy index >-> noDots)
     $ getOrPost (eventSourceAppSource $ stream c)
                 (handleClientEvents q)
 
+index :: String -> Maybe String
+index "" = Just "web-client/Klatch.html"
+index s  = Just ("web-client/" ++ s)
+
 handleClientEvents :: TChan Command -> Application
 handleClientEvents q req = do
-  x <- lazyRequestBody req
-  case decode x of
-    Just cmd -> do
-      atomically (writeTChan q cmd)
-      return (responseLBS ok200 [] LBS.empty)
-    Nothing ->
-      return (responseLBS imATeaPot418 [] LBS.empty)
+  case pathInfo req of
+    ["api", "events"] -> do
+        x <- lazyRequestBody req
+        case decode x of
+          Just cmd -> do
+            atomically (writeTChan q cmd)
+            return (responseLBS ok200 [] LBS.empty)
+          Nothing ->
+            return (responseLBS imATeaPot418 [] LBS.empty)
+    _ -> return (responseLBS notFound404 [] LBS.empty)
 
 getOrPost :: Application -> Application -> Application
 getOrPost g _ req | requestMethod req == methodGet  = g req
