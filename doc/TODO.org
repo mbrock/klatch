@@ -1,5 +1,14 @@
 * To do on Klatch
 
+** Investigate socket reading
+There might be a bug where lines are broken up incorrectly.  This
+probably has to do with the Pipes.ByteString stuff.
+
+** Are we using AMQP channels correctly?
+Manning's RabbitMQ book suggests that channels can only be used by
+one thread at a time.  I'm not sure what this means in the presence
+of GHC green threads.
+
 ** Make sure the serialization is sane
 Right now we're using Aeson's default serialization format, which
 isn't terrible, but it would be better to have it fully specified.
