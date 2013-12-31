@@ -117,6 +117,60 @@ instance FromJSON Command where
         \x -> IRCSend <$> x .: "name" <*> parseIrcMsg x,
       "event" ==> "Record" ==>
         \x -> EventRecord <$> parseJSON x ]
+  parseJSON _ = fail "Unrecognizable command"
+
+instance ToJSON Event where
+  toJSON (Event t s p) =
+    object $ ["timestamp" .= t, "sequence" .= s] ++ [payloadAttribute p]
+
+instance ToJSON Payload where
+  toJSON p = object [payloadAttribute p]
+
+infixr 2 .==
+
+(.==) :: Text -> (Text, Value) -> (Text, Value)
+(.==) = (.=)
+
+payloadAttribute :: Payload -> (Text, Value)
+payloadAttribute p = case p of
+  MetaReplaying a ->
+    "meta" .== "Replaying" .= object ["count" .= a]
+  MetaStreaming ->
+    "meta" .== "Streaming" .= True
+  SocketStarted a b c ->
+    "socket" .== "Started" .= object ["name" .= a, "host" .= b, "port" .= c]
+  SocketSucceeded a ->
+    "socket" .== "Succeeded" .= object ["name" .= a]
+  SocketFailed a b ->
+    "socket" .== "Failed" .= object ["name" .= a, "reason" .= b]
+  SocketEndOfFile a ->
+    "socket" .== "EndOfFile" .= object ["name" .= a]
+  SocketError a b ->
+    "socket" .== "Error" .= object ["name" .= a, "reason" .= b]
+  LineReceived a b ->
+    "line" .== "Received" .= object ["name" .= a, "line" .= b]
+  LineSent a b ->
+    "line" .== "Sent" .= object ["name" .= a, "line" .= b]
+  IRCReceived a b ->
+    "irc" .== "Received" .= object ("name" .= a : ircMsgAttrs b)
+  IRCSent a b ->
+    "irc" .== "Sent" .= object ("name" .= a : ircMsgAttrs b)
+  Other a b ->
+    a .= b
+
+ircMsgAttrs :: IRCMsg -> [(Text, Value)]
+ircMsgAttrs _ = undefined
+
+instance ToJSON Command where
+  toJSON p = object [case p of
+    SocketStart a b c ->
+      "socket" .== "Start" .= object ["name" .= a, "host" .= b, "port" .= c]
+    LineSend a b ->
+      "line" .== "Send" .= object ["name" .= a, "line" .= b]
+    IRCSend a b ->
+      "irc" .== "Send" .= object ("name" .= a : ircMsgAttrs b)
+    EventRecord a ->
+      "event" .== "Record" .= a]
 
 newtype Envoy = Envoy { sendTo :: Text -> IO () }
 
