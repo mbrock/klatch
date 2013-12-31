@@ -5,7 +5,7 @@
     render: function () {
       var message = this.props.message;
       var name = message.getServerName();
-      var msg = message.getIRCMessage();
+      var irc = message.irc.Received;
 
       var source;
       var content;
@@ -15,15 +15,15 @@
         timestamp = <Timestamp t={message.timestamp} />;
       }
 
-      if (msg.msgCmd === 'PRIVMSG' && (source = message.getUserNick())) {
+      if (irc.command === 'PRIVMSG' && (source = message.getUserNick())) {
         source = this.props.sourceDiffers ? source: null;
-        content = <Utterance by={source} text={msg.msgTrail} />;
+        content = <Utterance by={source} text={irc.trail} />;
 
       } else {
         content = <span>
           <ServerKey name={name} />
-          <Command command={msg.msgCmd} />
-          <Trail text={msg.msgTrail} />;
+          <Command command={irc.command} />
+          <Trail text={irc.trail} />;
         </span>;
       }
 
@@ -33,21 +33,23 @@
 
   Klatch.ErrorMessage = React.createClass({
     render: function () {
-      return <div className="error-message">
-               <Timestamp t={this.props.message.timestamp} />
-               <span>
-                 <ServerKey name={this.props.message.contents[0]} />
-                 <Command command="(error)" />
-                 <Trail text={this.props.message.contents[1]} />
-               </span>
-             </div>;
+      return (
+        <div className="error-message">
+          <Timestamp t={this.props.message.timestamp} />
+          <span>
+            <ServerKey name={this.props.message.socket.Error.name} />
+            <Command command="(error)" />
+            <Trail text={this.props.message.socket.Error.reason} />
+          </span>
+        </div>
+      );
     }
   });
 
   Klatch.Message = React.createClass({
     render: function () {
       return <div>
-        {JSON.stringify(this.props.message.payload)}
+        {JSON.stringify(this.props.message)}
       </div>;
     }
   });

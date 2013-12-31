@@ -31,57 +31,59 @@
     },
 
     recordMessage: function (data) {
-      var message = new Klatch.MessageModel(data);
+      var message = Klatch.MessageModel(data);
       var messages = this.state.messages;
       var newMessages = {};
       var update = {};
       var source;
 
-      if (message.payload.tag === 'Replaying') {
-        update.replaying = message.contents;
+      console.log(data);
+
+      if (data.meta && data.meta.Replaying) {
+        update.replaying = data.meta.Replaying.count;
         update.replayed = 0;
       }
 
-      else if (message.payload.tag === 'Streaming') {
+      else if (data.meta && data.meta.Streaming) {
         update.replaying = update.replayed = 0;
       }
 
-      else if (message.payload.tag === 'Received' ||
-               message.payload.tag === 'Error') {
+      else if ((data.irc && data.irc.Received) ||
+               (data.socket && data.socket.Error)) {
         source = message.getNameForArea();
 
         newMessages[source] = (messages[source] || []).concat(message);
         update.messages = $.extend({}, messages, newMessages);
 
-        update.replayed = this.updateReplayCount(message.isMeta);
+        update.replayed = this.updateReplayCount(data.meta);
       }
 
-      else if (message.payload.tag === 'ClientEvent') {
-        update = this.handleClientEvent(message.data.tag, message);
+      else if (data['klatch.js']) {
+        update = this.handleClientEvent(data['klatch.js'], message);
       }
 
       else {
-        update.replayed = this.updateReplayCount(message.isMeta);
+        update.replayed = this.updateReplayCount(data.meta);
       }
 
       this.setState(update);
     },
 
-    handleClientEvent: function (tag, message) {
+    handleClientEvent: function (data, message) {
       var messages = {};
       var areaMinimization = {};
 
-      if (tag === 'mark-as-read') {
-        source = message.data.area;
+      if (data.MarkAsRead) {
+        source = data.MarkAsRead.area;
         if (this.state.messages[source])
           messages[source] = this.state.messages[source].concat(message);
 
-      } else if (tag === 'toggle-area-minimization') {
-        source = message.data.area;
+      } else if (data.ToggleAreaMinimization) {
+        source = data.ToggleAreaMinimization.area;
         areaMinimization[source] = !this.state.areaMinimization[source];
 
       } else {
-        console.log("Unrecognized client event '%o': %o", tag, message);
+        console.log("Unrecognized client event '%o': %o", data, message);
       }
 
       return {

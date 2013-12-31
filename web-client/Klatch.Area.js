@@ -21,15 +21,15 @@
           source        = newSource;
         }
 
-        if (message.payload.tag === "Received")
+        if (message.irc && message.irc.Received)
           return <IRCMessage message={message}
                              sourceDiffers={sourceDiffers || !(i++ % 5)}
                              key={message.sequence} />;
 
-        else if (message.payload.tag === "Error")
+        else if (message.socket && message.socket.Error)
           return <ErrorMessage message={message} key={message.sequence} />;
 
-        else if (message.clientEventTag === 'mark-as-read')
+        else if (message.data && message.data.MarkAsRead)
           return <MarkedAsRead key={message.sequence} />;
 
         else
@@ -89,17 +89,19 @@
     componentDidMount: function (node) {
       var self = this;
       $("a[rel=mark-as-read]", node).click(function () {
-        Klatch.saveClientEvent({
-          tag: 'mark-as-read',
-          area: self.props.name,
-          server: self.props.server
+        Klatch.recordClientEvent({
+          MarkAsRead: {
+            area: self.props.name,
+            server: self.props.server
+          }
         });
       });
 
       $("a[rel=toggle-area-minimization]", node).click(function () {
-        Klatch.saveClientEvent({
-          tag: 'toggle-area-minimization',
-          area: self.props.name
+        Klatch.recordClientEvent({
+          ToggleAreaMinimization: {
+            area: self.props.name
+          }
         });
       });
     }
@@ -164,7 +166,9 @@
 
     handleCommand: function (text) {
       var msg = "PRIVMSG " + this.props.area.name + " :" + text;
-      Klatch.sendCommand('Send', this.props.area.server, msg);
+      Klatch.sendCommand({
+        line: { Send: { name: this.props.area.server, line: msg }}
+      });
     }
   });
 })();
