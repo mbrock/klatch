@@ -11,8 +11,10 @@ import Data.Aeson
 import Data.Aeson.Types              (Parser)
 import Data.Map                      (Map)
 import Data.Text                     (Text)
-import Network.IRC.ByteString.Parser (IRCMsg, UserInfo)
+import Network.IRC.ByteString.Parser (IRCMsg (..), UserInfo (..))
 import Prelude                hiding (sequence)
+
+import qualified Data.ByteString as BS
 
 envoyVersion :: Int
 envoyVersion = 1
@@ -103,8 +105,17 @@ instance FromJSON Payload where
   parseJSON _ = fail "Unrecognizable payload"
 
 parseIrcMsg :: Object -> Parser IRCMsg
-parseIrcMsg _ =
-  return undefined -- ugh
+parseIrcMsg x =
+  IRCMsg <$> ("prefix" ==> parsePrefix) x
+         <*> x .: "command" <*> x .: "params" <*> x .: "trail"
+
+parsePrefix :: Object -> Parser (Maybe (Either UserInfo BS.ByteString))
+parsePrefix x = flip oneOf x [
+  "User" ==>
+    \y -> fmap (Just . Left) $
+      UserInfo <$> y .: "nick" <*> y .: "name" <*> y .: "host",
+  "Server" ==>
+    \y -> Just . Right <$> parseJSON y ]
 
 instance FromJSON Command where
   parseJSON (Object v) =
