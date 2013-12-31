@@ -81,7 +81,9 @@ executable envoy
                  old-locale,
                  hscolour,
                  irc-bytestring,
-                 attoparsec
+                 attoparsec,
+                 QuickCheck,
+                 unordered-containers
 
 executable ponger
   main-is: Klatch/Ponger/Main.hs
@@ -113,4 +115,6 @@ executable ponger
                  hscolour,
                  directory,
                  irc-bytestring,
-                 attoparsec
+                 attoparsec,
+                 QuickCheck,
+                 unordered-containers

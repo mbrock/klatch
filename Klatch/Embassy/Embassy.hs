@@ -59,7 +59,6 @@ main = do
        ((replaying olds
          >> (readFrom amqp >-> decodingIrcMsgs state
                            >-> into (writeToLog fileLog)))
-        >-> loggingReads
         >-> toChannel eventQueue)
 
 replaying :: [Event] -> Producer Event IO ()

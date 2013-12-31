@@ -9,7 +9,7 @@
       var payload = {};
       payload[Klatch.ClientTag] = data;
       return $.post('/api/command', JSON.stringify({
-        event: { Record: event }
+        event: { Record: payload }
       }));
     },
 
