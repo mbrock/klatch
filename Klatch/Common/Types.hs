@@ -4,6 +4,8 @@
 
 module Klatch.Common.Types where
 
+import Test.QuickCheck hiding ((==>))
+
 import Control.Applicative
 import Control.Concurrent.STM.TVar   (TVar)
 import Control.Monad                 (MonadPlus, msum)
@@ -15,6 +17,8 @@ import Network.IRC.ByteString.Parser (IRCMsg (..), UserInfo (..))
 import Prelude                hiding (sequence)
 
 import qualified Data.ByteString as BS
+import qualified Data.Text.Encoding as E
+import qualified Data.HashMap.Strict as HM
 
 envoyVersion :: Int
 envoyVersion = 1
@@ -28,10 +32,16 @@ type Reason     = Text
 type Line       = Text
 type Protocol   = Text
 
+instance Arbitrary Text where
+  arbitrary = elements ["foo", "bar", "baz"]
+
 data Event = Event { timestamp :: Timestamp
                    , sequence :: Sequence
                    , payload :: Payload }
              deriving (Eq, Show)
+
+instance Arbitrary Event where
+  arbitrary = Event <$> arbitrary <*> arbitrary <*> arbitrary
 
 data Payload = MetaReplaying Int
              | MetaStreaming
@@ -50,6 +60,34 @@ data Payload = MetaReplaying Int
 
              | Other Protocol Value
                deriving (Eq, Show)
+
+instance Arbitrary Payload where
+  arbitrary = oneof [
+      MetaReplaying <$> arbitrary
+    , return MetaStreaming
+    , SocketStarted <$> arbitrary <*> arbitrary <*> arbitrary
+    , SocketSucceeded <$> arbitrary
+    , SocketFailed <$> arbitrary <*> arbitrary
+    , SocketError <$> arbitrary <*> arbitrary
+    , SocketEndOfFile <$> arbitrary
+    , LineReceived <$> arbitrary <*> arbitrary
+    , LineSent <$> arbitrary <*> arbitrary
+    , IRCReceived <$> arbitrary <*> arbitrary
+    , IRCSent <$> arbitrary <*> arbitrary
+    , Other <$> arbitrary <*> arbitrary
+    ]
+
+instance Arbitrary Value where
+  arbitrary = return $ Null
+
+instance Arbitrary IRCMsg where
+  arbitrary = IRCMsg <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
+
+instance Arbitrary BS.ByteString where
+  arbitrary = fmap E.encodeUtf8 arbitrary
+
+instance Arbitrary UserInfo where
+  arbitrary = UserInfo <$> arbitrary <*> arbitrary <*> arbitrary
 
 data Command = SocketStart ServerName HostName Port
              | LineSend ServerName Text
@@ -75,7 +113,7 @@ instance FromJSON Payload where
     flip oneOf v [
       "meta" ==> oneOf [
         "Replaying" ==> \x -> MetaReplaying <$> x .: "count",
-        "Streaming" ==> \(_ :: Object) -> return MetaStreaming ],
+        "Streaming" ==> \(_ :: Value) -> return MetaStreaming ],
 
       "socket" ==> oneOf [
         "Started"   ==>
@@ -100,22 +138,33 @@ instance FromJSON Payload where
         "Received" ==>
            \x -> IRCReceived     <$> x .: "name" <*> parseIrcMsg x,
         "Sent"     ==>
-           \x -> IRCSent         <$> x .: "name" <*> parseIrcMsg x ]]
+           \x -> IRCSent         <$> x .: "name" <*> parseIrcMsg x ],
+
+      \_ -> Other (protocolName v) <$> v .: protocolName v ]
 
   parseJSON _ = fail "Unrecognizable payload"
+
+protocolName :: Object -> Text
+protocolName v = head (filter (not . boring) (HM.keys v))
+  where boring "sequence" = True
+        boring "timestamp" = True
+        boring _ = False
 
 parseIrcMsg :: Object -> Parser IRCMsg
 parseIrcMsg x =
   IRCMsg <$> ("prefix" ==> parsePrefix) x
          <*> x .: "command" <*> x .: "params" <*> x .: "trail"
 
-parsePrefix :: Object -> Parser (Maybe (Either UserInfo BS.ByteString))
-parsePrefix x = flip oneOf x [
+parsePrefix :: Value -> Parser (Maybe (Either UserInfo BS.ByteString))
+parsePrefix (Object x) = flip oneOf x [
   "User" ==>
     \y -> fmap (Just . Left) $
       UserInfo <$> y .: "nick" <*> y .: "name" <*> y .: "host",
   "Server" ==>
-    \y -> Just . Right <$> parseJSON y ]
+    \y -> Just . Right <$> y .: "host",
+  (\_ -> fail "Unrecognizable prefix")]
+parsePrefix Null = return Nothing
+parsePrefix _ = fail "Unrecognizable prefix"
 
 instance FromJSON Command where
   parseJSON (Object v) =
@@ -176,7 +225,7 @@ ircMsgAttrs m = [
     Just (Left x) -> object ["User" .= object ["nick" .= userNick x,
                                                "name" .= userName x,
                                                "host" .= userHost x]]
-    Just (Right x) -> object ["Server" .= x],
+    Just (Right x) -> object ["Server" .= object ["host" .= x]],
   "command" .= toJSON (msgCmd m),
   "params" .= toJSON (msgParams m),
   "trail" .= toJSON (msgTrail m)]

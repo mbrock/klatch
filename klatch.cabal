@@ -47,7 +47,9 @@ executable embassy
                  http-types,
                  blaze-builder,
                  conduit,
-                 wai-middleware-static
+                 wai-middleware-static,
+                 QuickCheck,
+                 unordered-containers
 
 executable envoy
   main-is: Klatch/Envoy/Envoy.hs
