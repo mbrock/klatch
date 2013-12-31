@@ -58,8 +58,8 @@ main = do
        (contents commandQueue >-> encoder >-> writeTo amqp)
        ((replaying olds
          >> (readFrom amqp >-> decodingIrcMsgs state
-                           >-> loggingReads
                            >-> into (writeToLog fileLog)))
+        >-> loggingReads
         >-> toChannel eventQueue)
 
 replaying :: [Event] -> Producer Event IO ()
@@ -70,7 +70,7 @@ replaying olds = do
 
 decodingIrcMsgs :: EmbassyState -> Pipe Text Event IO ()
 decodingIrcMsgs state =
-  decoder >-> skipNothings >-> forever (decodeIrcMsg state)
+  loggingReads >-> decoder >-> skipNothings >-> forever (decodeIrcMsg state)
 
 decodeIrcMsg :: EmbassyState -> Pipe Event Event IO ()
 decodeIrcMsg state = do

@@ -140,7 +140,7 @@ instance ToJSON Payload where
 infixr 2 .==
 
 (.==) :: Text -> (Text, Value) -> (Text, Value)
-(.==) = (.=)
+s .== (k, v) = (s, object [(k, v)])
 
 payloadAttribute :: Payload -> (Text, Value)
 payloadAttribute p = case p of
