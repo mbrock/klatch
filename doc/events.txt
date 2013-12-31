@@ -1,0 +1,56 @@
+Events:
+  timestamp: UNIX milliseconds,
+  sequence: Natural, or -1 for "meta events",
+
+  one-of:
+    # Meta events are unrelated to the truth of the event log, and aren't
+    # saved.  They shouldn't appear on the event bus; they're only streamed
+    # to specific clients.
+    meta { one-of:
+      Replaying: { count }
+      Streaming: <true>
+    }
+
+    socket { one-of:
+      ConnectionStarted { name: ServerName, host: String, port: Integer }
+      ConnectionSucceeded { name: ServerName }
+      ConnectionFailed { name: ServerName, reason: String, ... }
+
+      EndOfFile { name: ServerName }
+      ConnectionError { name: ServerName, reason: String, ... }
+    }
+
+    line { one-of:
+      Received, Sent { name: ServerName, line: String }
+    }
+
+    irc { one-of:
+      Received, Sent {
+        name: ServerName,
+        prefix { zero-or-one-of:
+          User   { nick, name, host }
+          Server { host }
+        },
+        command: String
+        params: [String],
+        trail: String
+      }
+    }
+
+Commands:
+  one-of:
+    socket { one-of:
+      StartConnecting { name, host, port }
+    }
+
+    line { one-of:
+      Send { name, line }
+    }
+
+    irc {
+      Send { (same as IRCMessageSent) }
+    }
+
+    event { one-of:
+      Record { event }
+    }

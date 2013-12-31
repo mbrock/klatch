@@ -1,0 +1,31 @@
+Here is an example of a klatch event sequence encoded as a JSON
+document:
+
+  [
+    { timestamp: 100, sequence: -1,
+      meta: { Replaying: { count: 2 } } },
+    { timestamp: 10, sequence: 0,
+      socket: { ConnectionStarted: {
+        name: "freenode", host: "irc.freenode.net", port: 6667 } } },
+    { timestamp: 11, sequence: 1,
+      socket: { ConnectionSucceeded: { name: "freenode" } } },
+    { timestamp: 101, sequence: -1,
+      meta: { Streaming: true } }
+  ]
+
+The top-level array of this JSON document is not an explicit part of
+the event specification, which only defines the structure of each
+event.  Even the byte-level format of the events is undefined; though
+APIs for JSON access are provided, one can imagine APIs providing
+other formats, as long as the basic structure is recoverable.
+
+Hopefully the JSON structure can be understood from <events.txt>
+combined with the simple example; if not, look at the code or a saved
+event log.
+
+The JSON structure is intended to make good use of keys, so that you
+can easily grep for values matching, for example
+
+  irc.Received.prefix.user.nick == 'sam'
+
+This means we don't use the typical "tagged union" encoding.
