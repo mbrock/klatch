@@ -6,12 +6,11 @@ module Klatch.Common.Types where
 
 import Control.Applicative
 import Control.Concurrent.STM.TVar   (TVar)
-import Control.Monad
+import Control.Monad                 (MonadPlus, msum)
 import Data.Aeson
-import Data.Aeson.Types (Parser)
+import Data.Aeson.Types              (Parser)
 import Data.Map                      (Map)
 import Data.Text                     (Text)
-import GHC.Generics                  (Generic)
 import Network.IRC.ByteString.Parser (IRCMsg, UserInfo)
 import Prelude                hiding (sequence)
 
@@ -50,21 +49,28 @@ data Payload = MetaReplaying Int
              | Other Protocol Value
                deriving (Eq, Show)
 
-data Command = SocketStartConnecting ServerName HostName Port
+data Command = SocketStart ServerName HostName Port
              | LineSend ServerName Text
              | IRCSend ServerName IRCMsg
-             | EventRecord Event
+             | EventRecord Payload
                deriving (Eq, Show)
 
 oneOf :: MonadPlus m => [a -> m b] -> a -> m b
 oneOf fs x = msum (map ($ x) fs)
+
+infixr 2 ==>
 
 (==>) :: FromJSON a => Text -> (a -> Parser b) -> Object -> Parser b
 (==>) s f x = x .: s >>= \y -> f y
 
 instance FromJSON Event where
   parseJSON (Object v) =
-    Event <$> v .: "timestamp" <*> v .: "sequence" <*> flip oneOf v [
+    Event <$> v .: "timestamp" <*> v .: "sequence" <*> parseJSON (Object v)
+  parseJSON _ = fail "Unrecognizable event"
+
+instance FromJSON Payload where
+  parseJSON (Object v) =
+    flip oneOf v [
       "meta" ==> oneOf [
         "Replaying" ==> \x -> MetaReplaying <$> x .: "count",
         "Streaming" ==> \(_ :: Object) -> return MetaStreaming ],
@@ -94,60 +100,32 @@ instance FromJSON Event where
         "Sent"     ==>
            \x -> IRCSent         <$> x .: "name" <*> parseIrcMsg x ]]
 
-  parseJSON _ = fail "Unrecognizable event"
+  parseJSON _ = fail "Unrecognizable payload"
 
 parseIrcMsg :: Object -> Parser IRCMsg
 parseIrcMsg _ =
   return undefined -- ugh
 
--- data Command = Connect         Text Text Text
---              | Send            Text Text
---              | Ping
---              | SaveClientEvent Text Text
---              | Unknown         (Maybe Text)
---                deriving (Eq, Show, Generic)
+instance FromJSON Command where
+  parseJSON (Object v) =
+    flip oneOf v [
+      "socket" ==> "Start" ==>
+        \x -> SocketStart <$> x .: "name" <*> x .: "host" <*> x .: "port",
+      "line" ==> "Send" ==>
+        \x -> LineSend <$> x .: "name" <*> x .: "line",
+      "irc" ==> "Send" ==>
+        \x -> IRCSend <$> x .: "name" <*> parseIrcMsg x,
+      "event" ==> "Record" ==>
+        \x -> EventRecord <$> parseJSON x ]
 
--- type EventMetadata = (Timestamp, Int)
+newtype Envoy = Envoy { sendTo :: Text -> IO () }
 
--- data Event a = Connected   Text Text Text
---              | Received    Text a
---              | Error       Text Text
---              | Started
---              | Stopping
---              | Replaying   Int
---              | Streaming
---              | Pong        Int
---              | ClientEvent Text Text
---                deriving (Eq, Show, Generic)
+type Fleet = TVar (Map Text Envoy)
 
--- data EventWithMetadata d i = EventWithMetadata
---   { payload   :: Event d
---   , timestamp :: Timestamp
---   , version   :: Int
---   , sequence  :: i }
---     deriving (Eq, Show, Generic)
+metaevent :: Payload -> Event
+metaevent p = Event { timestamp = 0, sequence  = -1, payload = p }
 
--- type ParsedEvent = EventWithMetadata IRCMsg EventID
--- type RawEvent    = EventWithMetadata Text   ()
-
--- newtype Envoy = Envoy { sendTo :: Text -> IO () }
-
--- type Fleet = TVar (Map Text Envoy)
-
--- $(deriveJSON defaultOptions ''Command)
--- $(deriveJSON defaultOptions ''Event)
--- $(deriveJSON defaultOptions ''EventWithMetadata)
--- $(deriveJSON defaultOptions ''UserInfo)
--- $(deriveJSON defaultOptions ''IRCMsg)
-
--- metaevent :: Event IRCMsg -> ParsedEvent
--- metaevent p = EventWithMetadata {
---                 timestamp = 0,
---                 sequence  = -1,
---                 version   = envoyVersion,
---                 payload   = p }
-
--- isMetaevent :: Event a -> Bool
--- isMetaevent (Replaying _) = True
--- isMetaevent Streaming     = True
--- isMetaevent _             = False
+isMetaevent :: Payload -> Bool
+isMetaevent (MetaReplaying _) = True
+isMetaevent MetaStreaming     = True
+isMetaevent _                 = False

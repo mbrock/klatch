@@ -39,7 +39,7 @@ Events:
 Commands:
   one-of:
     socket { one-of:
-      StartConnecting { name, host, port }
+      Start { name, host, port }
     }
 
     line { one-of:
