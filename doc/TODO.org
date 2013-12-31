@@ -2,16 +2,16 @@
 
 ** Server stuff
 
-*** Investigate socket reading
+*** TODO Investigate socket reading
 There might be a bug where lines are broken up incorrectly.  This
 probably has to do with the Pipes.ByteString stuff.
 
-*** Are we using AMQP channels correctly?
+*** TODO Are we using AMQP channels correctly?
 Manning's RabbitMQ book suggests that channels can only be used by
 one thread at a time.  I'm not sure what this means in the presence
 of GHC green threads.
 
-*** Use one thread for stdout logging
+*** TODO Use one thread for stdout logging
 Right now, simultaneous stdout log messages can become garbled.  It
 would probably be best to use an existing log framework, like
 hs-logger.
@@ -47,11 +47,11 @@ worker that provides shell access, for example?
 
 ** Protocol stuff
 
-*** Make sure the serialization is sane
+*** DONE Make sure the serialization is sane
 Right now we're using Aeson's default serialization format, which
 isn't terrible, but it would be better to have it fully specified.
 
-**** Don't double-serialize JSON
+**** DONE Don't double-serialize JSON
 The arbitrary JSON payload of client events should have type Value in
 the Haskell code, so it can be serialized without quoting.
 
@@ -63,7 +63,7 @@ tag.  The client exposes it to the user and logs her choices.
 
 ** Client stuff
 
-*** Commands
+*** TODO Commands
 There should be a declarative system for user commands, so we can do
 completion and interactive help.  To start, just CONNECT, JOIN, and
 PRIVMSG are enough.
@@ -72,6 +72,6 @@ PRIVMSG are enough.
 Obviously a fancy IRC client needs a fancy input box.  At least it
 should do tab completion.  Helping with commands would also be nice.
 
-*** Fix the timestamp & nick collapsing
+*** TODO Fix the timestamp & nick collapsing
 The timestamp should simply appear every five minutes or so.
 Nicknames when different or when same perhaps ten seconds.
