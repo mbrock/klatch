@@ -21,34 +21,34 @@ import Klatch.Envoy.Queue
 import Klatch.Common.Types
 import Klatch.Common.Util
 
-handleConnect :: Fleet -> TChan RawEvent -> Text -> Text -> Text -> IO ()
+handleConnect :: Fleet -> TChan Event -> ServerName -> HostName -> Port
+              -> IO ()
 handleConnect fleet channel name host port =
-  void . async . flip catchError (writeException name channel ()) $ do
+  void . async . flip catchError (writeException name channel 0) $ do
     writeLog $ "Connecting to "
-            ++ bolded (string host ++ ":" ++ string port) ++ " ..."
-    connect (unpack host) (unpack port) $ \(socket, _) ->
-      onConnect fleet channel socket name host port
+            ++ bolded (string host ++ ":" ++ show port) ++ " ..."
+    connect (unpack host) (show port) $ \(socket, _) ->
+      onConnect fleet channel socket name
 
-handleSend :: Fleet -> TChan RawEvent -> Text -> Text -> IO ()
+handleSend :: Fleet -> TChan Event -> Text -> Text -> IO ()
 handleSend fleet channel name line =
   Map.lookup name <$> atomically (readTVar fleet) >>=
-    maybe (writeError name channel () "No such server") (flip sendTo line)
+    maybe (writeError name channel 0 "No such server") (flip sendTo line)
 
 addEnvoy :: Fleet -> Text -> Output Text -> IO ()
 addEnvoy m name o = atomically . modifyTVar m . Map.insert name . Envoy $ f
   where f x = do True <- atomically $ send o (T.append x "\n")
                  return ()
 
-receiveLines :: Text -> Socket -> TChan RawEvent -> IO ()
+receiveLines :: Text -> Socket -> TChan Event -> IO ()
 receiveLines name socket channel = runEffect $ do
-  for (socketLines socket) $ writeEvent channel () . Received name
-  writeError name channel () "Connection closed"
+  for (socketLines socket) $ writeEvent channel 0 . LineReceived name
+  writeError name channel 0 "Connection closed"
 
-onConnect :: Fleet -> TChan RawEvent -> Socket -> Text
-          -> Text -> Text -> IO ()
-onConnect fleet channel socket name host port = do
+onConnect :: Fleet -> TChan Event -> Socket -> Text -> IO ()
+onConnect fleet channel socket name = do
   writeLog $ "Connected to " ++ bolded (string name) ++ "."
-  writeEvent channel () $ Connected name host port
-  flip catchError (writeException name channel ()) . void $ concurrently
+  writeEvent channel 0 $ SocketSucceeded name
+  flip catchError (writeException name channel 0) . void $ concurrently
     (receiveLines name socket channel)
     (addEnvoy fleet name `outputtingTo` writeToSocket socket)

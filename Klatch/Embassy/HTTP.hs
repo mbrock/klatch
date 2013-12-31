@@ -29,7 +29,7 @@ port = 3000
 url :: String
 url = "http://localhost:" ++ show port ++ "/"
 
-run :: MonadIO m => TChan ParsedEvent -> TChan Command -> m ()
+run :: MonadIO m => TChan Event -> TChan Command -> m ()
 run c q = liftIO $ do
   writeLog $ "Starting web server on " ++ bolded url
   Warp.run port
@@ -42,7 +42,7 @@ index :: String -> Maybe String
 index "" = Just "web-client/Klatch.html"
 index s  = Just ("web-client/" ++ s)
 
-streamEvents :: TChan ParsedEvent -> Middleware
+streamEvents :: TChan Event -> Middleware
 streamEvents c app req =
   case (requestMethod req, pathInfo req) of
     (m, ["api", "events"]) | m == methodGet ->
@@ -62,7 +62,7 @@ handleClientCommands q req = do
             return (responseLBS imATeaPot418 [] LBS.empty)
     _ -> return (responseLBS notFound404 [] LBS.empty)
 
-stream :: TChan ParsedEvent -> C.Source IO ServerEvent
+stream :: TChan Event -> C.Source IO ServerEvent
 stream c = do
   c' <- liftIO . atomically $ cloneTChan c
   liftIO $ writeLog "Accepting web visitor."

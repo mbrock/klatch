@@ -22,14 +22,14 @@ main = do
     readFrom amqp >-> silentDecoder >-> ponger >-> encoder
                   >-> loggingWrites >-> writeTo amqp
 
-ponger :: Pipe RawEvent Command IO ()
+ponger :: Pipe Event Command IO ()
 ponger = forever $ do
   x <- await
   case payload x of
-    Received name line ->
+    LineReceived name line ->
       case parseIRCLine line of
         Just (pong -> Just x') ->
-          yield $ Send name (toIRCLine x')
+          yield $ LineSend name (toIRCLine x')
         _ -> return ()
     _ ->
       return ()
