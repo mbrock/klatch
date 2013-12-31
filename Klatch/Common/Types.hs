@@ -170,7 +170,16 @@ payloadAttribute p = case p of
     a .= b
 
 ircMsgAttrs :: IRCMsg -> [(Text, Value)]
-ircMsgAttrs _ = undefined
+ircMsgAttrs m = [
+  "prefix" .= case msgPrefix m of
+    Nothing -> Null
+    Just (Left x) -> object ["User" .= object ["nick" .= userNick x,
+                                               "name" .= userName x,
+                                               "host" .= userHost x]]
+    Just (Right x) -> object ["Server" .= x],
+  "command" .= toJSON (msgCmd m),
+  "params" .= toJSON (msgParams m),
+  "trail" .= toJSON (msgTrail m)]
 
 instance ToJSON Command where
   toJSON p = object [case p of
