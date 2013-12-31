@@ -1,11 +1,14 @@
-{-# LANGUAGE DeriveGeneric, TemplateHaskell #-}
+{-# LANGUAGE DeriveGeneric, TemplateHaskell, OverloadedStrings,
+             ScopedTypeVariables #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Klatch.Common.Types where
 
 import Control.Applicative
 import Control.Concurrent.STM.TVar   (TVar)
+import Control.Monad
 import Data.Aeson
+import Data.Aeson.Types (Parser)
 import Data.Map                      (Map)
 import Data.Text                     (Text)
 import GHC.Generics                  (Generic)
@@ -27,67 +30,74 @@ type Protocol   = Text
 data Event = Event { timestamp :: Timestamp
                    , sequence :: Sequence
                    , payload :: Payload }
+             deriving (Eq, Show)
 
 data Payload = MetaReplaying Int
              | MetaStreaming
-             | SocketConnectionStarted ServerName HostName Port
-             | SocketConnectionSucceeded ServerName
-             | SocketConnectionFailed ServerName Reason
+
+             | SocketStarted ServerName HostName Port
+             | SocketSucceeded ServerName
+             | SocketFailed ServerName Reason
+             | SocketError ServerName Reason
+             | SocketEndOfFile ServerName
+
              | LineReceived ServerName Text
              | LineSent ServerName Text
+
              | IRCReceived ServerName IRCMsg
              | IRCSent ServerName IRCMsg
+
              | Other Protocol Value
-               deriving (Eq, Ord, Show, Read)
+               deriving (Eq, Show)
 
 data Command = SocketStartConnecting ServerName HostName Port
              | LineSend ServerName Text
              | IRCSend ServerName IRCMsg
              | EventRecord Event
-               deriving (Eq, Ord, Show, Read)
+               deriving (Eq, Show)
+
+oneOf :: MonadPlus m => [a -> m b] -> a -> m b
+oneOf fs x = msum (map ($ x) fs)
+
+(==>) :: FromJSON a => Text -> (a -> Parser b) -> Object -> Parser b
+(==>) s f x = x .: s >>= \y -> f y
 
 instance FromJSON Event where
   parseJSON (Object v) =
-    Event <$> v .: "timestamp" <*> v .: "sequence" <*> parsePayload v
+    Event <$> v .: "timestamp" <*> v .: "sequence" <*> flip oneOf v [
+      "meta" ==> oneOf [
+        "Replaying" ==> \x -> MetaReplaying <$> x .: "count",
+        "Streaming" ==> \(_ :: Object) -> return MetaStreaming ],
 
-oneOf fs x = mappend (map ($ x) fs)
-asOneOf s fs x =
-  do y <- x .: s
-     mappend (map (\(k, f) -> do z <- y .: k
-                                 f z) fs)
+      "socket" ==> oneOf [
+        "Started"   ==>
+           \x -> SocketStarted   <$> x .: "name" <*> x .: "host"
+                                 <*> x .: "port",
+        "Succeeded" ==>
+           \x -> SocketSucceeded <$> x .: "name",
+        "Failed"    ==>
+           \x -> SocketFailed    <$> x .: "name" <*> x .: "reason",
+        "EndOfFile" ==>
+           \x -> SocketEndOfFile <$> x .: "name",
+        "Error"     ==>
+           \x -> SocketError     <$> x .: "name" <*> x .: "reason" ],
 
--- This follows the definition in <events.txt>.
-parsePayload = oneOf [
-  "meta" `asOneOf` [
-    ("Replaying", \x -> MetaReplaying <$> x .: "count"),
-    ("Streaming", const $ return MetaStreaming)],
-  "socket" `asOneOf` [
-    ("ConnectionStarted", \x ->
-       SocketConnectionStarted <$> x .: "name"
-                               <*> x .: "host"
-                               <*> x .: "port"),
-    ("ConnectionSucceeded", \x ->
-       SocketConnectionSucceeded <$> x .: "name")
-    ("ConnectionFailed", \x ->
-       SocketConnectionFailed <$> x .: "name" <*> x .: "reason"),
-    ("EndOfFile", \x ->
-       SocketEndOfFile <$> x .: "name"),
-    ("ConnectionError", \x ->
-       SocketConnectionError <$> x .: "name" <*> x .: "reason") ],
-  "line" `asOneOf` [
-    ("Received", \x ->
-       LineReceived <$> x .: "name" <*> x .: "line"),
-    ("Sent", \x ->
-       LineSent <$> x .: "name" <*> x .: "line") ],
-  "irc" `asOneOf` [
-    ("Received", \x ->
-       IRCReceived <$> x .: "name" <*> parseIrcMsg x),
-    ("Sent", \x ->
-       IRCSent <$> x .: "name" <*> parseIrcMsg x)
-  ]
-]
+      "line" ==> oneOf [
+        "Received" ==>
+           \x -> LineReceived    <$> x .: "name" <*> x .: "line",
+        "Sent"     ==>
+           \x -> LineSent        <$> x .: "name" <*> x .: "line" ],
 
-parseIrcMsg x =
+      "irc" ==> oneOf [
+        "Received" ==>
+           \x -> IRCReceived     <$> x .: "name" <*> parseIrcMsg x,
+        "Sent"     ==>
+           \x -> IRCSent         <$> x .: "name" <*> parseIrcMsg x ]]
+
+  parseJSON _ = fail "Unrecognizable event"
+
+parseIrcMsg :: Object -> Parser IRCMsg
+parseIrcMsg _ =
   return undefined -- ugh
 
 -- data Command = Connect         Text Text Text

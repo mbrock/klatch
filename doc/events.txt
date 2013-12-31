@@ -12,12 +12,11 @@ Events:
     }
 
     socket { one-of:
-      ConnectionStarted { name: ServerName, host: String, port: Integer }
-      ConnectionSucceeded { name: ServerName }
-      ConnectionFailed { name: ServerName, reason: String, ... }
-
+      Started { name: ServerName, host: String, port: Integer }
+      Succeeded { name: ServerName }
+      Failed { name: ServerName, reason: String, ... }
       EndOfFile { name: ServerName }
-      ConnectionError { name: ServerName, reason: String, ... }
+      Error { name: ServerName, reason: String, ... }
     }
 
     line { one-of:
