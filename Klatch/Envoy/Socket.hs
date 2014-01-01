@@ -10,12 +10,12 @@ import Control.Concurrent.STM.TVar  (readTVar, modifyTVar)
 import Control.Monad                (void)
 import Control.Monad.Error          (catchError)
 import Data.Text                    (Text, unpack)
-import Network.Simple.TCP           (Socket, connect)
 import Pipes                        (for, runEffect)
 import Pipes.Concurrent             (Output, send)
 
-import qualified Data.Map  as Map
-import qualified Data.Text as T
+import qualified Data.Map           as Map
+import qualified Data.Text          as T
+import qualified Network.Simple.TCP as TCP
 
 import Klatch.Envoy.Queue
 import Klatch.Common.Types
@@ -25,29 +25,29 @@ handleConnect :: Fleet -> TChan Event -> ServerName -> HostName -> Port
               -> IO ()
 handleConnect fleet channel name host port =
   void . async . flip catchError (writeException name channel 0) $ do
-    writeLog $ "Connecting to "
-            ++ bolded (string host ++ ":" ++ show port) ++ " ..."
-    connect (unpack host) (show port) $ \(socket, _) ->
-      onConnect fleet channel socket name
+    connect host port (onConnect fleet channel name)
 
-handleSend :: Fleet -> TChan Event -> Text -> Text -> IO ()
+connect :: HostName -> Port -> (TCP.Socket -> IO ()) -> IO ()
+connect (HostName name) (Port port) f =
+  TCP.connect (unpack name) (show port) (f . fst)
+
+handleSend :: Fleet -> TChan Event -> ServerName -> Line -> IO ()
 handleSend fleet channel name line =
   Map.lookup name <$> atomically (readTVar fleet) >>=
     maybe (writeError name channel 0 "No such server") (flip sendTo line)
 
-addEnvoy :: Fleet -> Text -> Output Text -> IO ()
+addEnvoy :: Fleet -> ServerName -> Output Text -> IO ()
 addEnvoy m name o = atomically . modifyTVar m . Map.insert name . Envoy $ f
-  where f x = do True <- atomically $ send o (T.append x "\n")
-                 return ()
+  where f (Line x) = do True <- atomically $ send o (T.append x "\n")
+                        return ()
 
-receiveLines :: Text -> Socket -> TChan Event -> IO ()
+receiveLines :: ServerName -> TCP.Socket -> TChan Event -> IO ()
 receiveLines name socket channel = runEffect $ do
   for (socketLines socket) $ writeEvent channel 0 . LineReceived name
   writeError name channel 0 "Connection closed"
 
-onConnect :: Fleet -> TChan Event -> Socket -> Text -> IO ()
-onConnect fleet channel socket name = do
-  writeLog $ "Connected to " ++ bolded (string name) ++ "."
+onConnect :: Fleet -> TChan Event -> ServerName -> TCP.Socket -> IO ()
+onConnect fleet channel name socket = do
   writeEvent channel 0 $ SocketSucceeded name
   flip catchError (writeException name channel 0) . void $ concurrently
     (receiveLines name socket channel)

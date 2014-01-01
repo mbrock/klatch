@@ -67,8 +67,8 @@ writeToSocket :: Socket -> Input T.Text -> IO ()
 writeToSocket socket input = runEffect $
   fromInput input >-> P.map toUTF8 >-> toSocket socket
 
-socketLines :: Socket -> Producer T.Text IO ()
-socketLines s = p >-> P.filter (/= "") >-> P.map fromUTF8
+socketLines :: Socket -> Producer Line IO ()
+socketLines s = p >-> P.filter (/= "") >-> P.map (Line . fromUTF8)
   where p = PP.concat . PBS.lines $ fromSocket s 4096
 
 toUTF8 :: T.Text -> BS.ByteString
@@ -156,11 +156,11 @@ awaitOnce f = forever $ await >>= \x -> case f x of
                                           Just m  -> m >> continue
                                           Nothing -> yield x
 
-parseIRCLine :: T.Text -> Maybe IRCMsg
-parseIRCLine line =
+parseIRCLine :: Line -> Maybe IRCMsg
+parseIRCLine (Line line) =
   case toIRCMsg . toUTF8 $ T.append line "\r\n" of
     Done _ r -> Just r
     _ -> Nothing
 
-toIRCLine :: IRCMsg -> T.Text
-toIRCLine = fromUTF8 . fromIRCMsg
+toIRCLine :: IRCMsg -> Line
+toIRCLine = Line . fromUTF8 . fromIRCMsg

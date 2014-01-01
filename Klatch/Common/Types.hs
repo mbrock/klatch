@@ -1,8 +1,12 @@
 {-# LANGUAGE DeriveGeneric, TemplateHaskell, OverloadedStrings,
-             ScopedTypeVariables #-}
+             ScopedTypeVariables, GeneralizedNewtypeDeriving #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Klatch.Common.Types where
+
+-- This module is very dull and repetitive.  Maybe there's a more
+-- abstract way of doing this JSON business, but this works well
+-- enough.
 
 import Test.QuickCheck hiding ((==>))
 
@@ -11,6 +15,7 @@ import Control.Concurrent.STM.TVar   (TVar)
 import Control.Monad                 (MonadPlus, msum)
 import Data.Aeson
 import Data.Aeson.Types              (Parser)
+import Data.String                   (IsString)
 import Data.Map                      (Map)
 import Data.Text                     (Text)
 import Network.IRC.ByteString.Parser (IRCMsg (..), UserInfo (..))
@@ -23,14 +28,25 @@ import qualified Data.HashMap.Strict as HM
 envoyVersion :: Int
 envoyVersion = 1
 
-type Timestamp  = Int
-type Sequence   = Int
-type ServerName = Text
-type HostName   = Text
-type Port       = Int
-type Reason     = Text
-type Line       = Text
-type Protocol   = Text
+newtype Timestamp  = Timestamp Int   deriving (Eq, Show, Arbitrary,
+                                               FromJSON, ToJSON,
+                                               Num, Integral, Real,
+                                               Enum, Ord)
+newtype Sequence   = Sequence Int    deriving (Eq, Show, Arbitrary, Num,
+                                               FromJSON, ToJSON)
+newtype ServerName = ServerName Text deriving (Eq, Show, Arbitrary,
+                                               FromJSON, ToJSON, Ord,
+                                               IsString)
+newtype HostName   = HostName Text   deriving (Eq, Show, Arbitrary,
+                                               FromJSON, ToJSON)
+newtype Port       = Port Int        deriving (Eq, Show, Arbitrary,
+                                               FromJSON, ToJSON)
+newtype Reason     = Reason Text     deriving (Eq, Show, Arbitrary,
+                                               FromJSON, ToJSON)
+newtype Line       = Line Text       deriving (Eq, Show, Arbitrary,
+                                               FromJSON, ToJSON)
+newtype Protocol   = Protocol Text   deriving (Eq, Show, Arbitrary,
+                                               FromJSON, ToJSON)
 
 instance Arbitrary Text where
   arbitrary = elements ["foo", "bar", "baz"]
@@ -52,8 +68,8 @@ data Payload = MetaReplaying Int
              | SocketError ServerName Reason
              | SocketEndOfFile ServerName
 
-             | LineReceived ServerName Text
-             | LineSent ServerName Text
+             | LineReceived ServerName Line
+             | LineSent ServerName Line
 
              | IRCReceived ServerName IRCMsg
              | IRCSent ServerName IRCMsg
@@ -90,7 +106,7 @@ instance Arbitrary UserInfo where
   arbitrary = UserInfo <$> arbitrary <*> arbitrary <*> arbitrary
 
 data Command = SocketStart ServerName HostName Port
-             | LineSend ServerName Text
+             | LineSend ServerName Line
              | IRCSend ServerName IRCMsg
              | EventRecord Payload
                deriving (Eq, Show)
@@ -140,7 +156,7 @@ instance FromJSON Payload where
         "Sent"     ==>
            \x -> IRCSent         <$> x .: "name" <*> parseIrcMsg x ],
 
-      \_ -> Other (protocolName v) <$> v .: protocolName v ]
+      \_ -> Other (Protocol $ protocolName v) <$> v .: protocolName v ]
 
   parseJSON _ = fail "Unrecognizable payload"
 
@@ -215,7 +231,7 @@ payloadAttribute p = case p of
     "irc" .== "Received" .= object ("name" .= a : ircMsgAttrs b)
   IRCSent a b ->
     "irc" .== "Sent" .= object ("name" .= a : ircMsgAttrs b)
-  Other a b ->
+  Other (Protocol a) b ->
     a .= b
 
 ircMsgAttrs :: IRCMsg -> [(Text, Value)]
@@ -241,9 +257,9 @@ instance ToJSON Command where
     EventRecord a ->
       "event" .== "Record" .= a]
 
-newtype Envoy = Envoy { sendTo :: Text -> IO () }
+newtype Envoy = Envoy { sendTo :: Line -> IO () }
 
-type Fleet = TVar (Map Text Envoy)
+type Fleet = TVar (Map ServerName Envoy)
 
 metaevent :: Payload -> Event
 metaevent p = Event { timestamp = 0, sequence  = -1, payload = p }
