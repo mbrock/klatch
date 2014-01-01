@@ -21,9 +21,9 @@
 
       } else {
         content = <span>
-          <ServerKey name={name} />
           <Command command={irc.command} />
-          <Trail text={irc.trail} />;
+          <Params params={irc.params} />
+          <Trail text={irc.trail} />
         </span>;
       }
 
@@ -37,7 +37,6 @@
         <div className="error-message">
           <Timestamp t={this.props.message.timestamp} />
           <span>
-            <ServerKey name={this.props.message.socket.Error.name} />
             <Command command="(error)" />
             <Trail text={this.props.message.socket.Error.reason} />
           </span>
@@ -76,6 +75,11 @@
   var ServerKey = createSpanClass("server-key", "name");
   var Command   = createSpanClass("command", "command");
   var Trail     = createSpanClass("trail", "text");
+  var Params    = React.createClass({
+    render: function () {
+      return <span className="params">{this.props.params.join(" ")}</span>;
+    }
+  });
 
   var Utterance = React.createClass({
     render: function () {

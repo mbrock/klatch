@@ -33,6 +33,12 @@ body > section {
   width: 10ex;
   text-align: right;
 }
+.params {
+  margin-right: 1ex;
+}
+.trail {
+  white-space: pre-wrap;
+}
 .error-message .command {
   color: #cc0000;
 }
