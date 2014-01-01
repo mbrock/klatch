@@ -10,7 +10,7 @@ with Tasty or whatever, and then add more tests.
 
 ** Server stuff
 
-*** TODO Investigate socket reading
+*** DONE Investigate socket reading
 There might be a bug where lines are broken up incorrectly.  This
 probably has to do with the Pipes.ByteString stuff.
 
