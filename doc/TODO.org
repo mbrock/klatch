@@ -1,5 +1,13 @@
 * To do on Klatch
 
+** General
+
+*** TODO Setup testing
+
+Just running the JSON encode-decode isomorphism through QuickCheck
+turns out to be a useful test.  We should set this up as a Cabal step
+with Tasty or whatever, and then add more tests.
+
 ** Server stuff
 
 *** TODO Investigate socket reading
@@ -7,9 +15,10 @@ There might be a bug where lines are broken up incorrectly.  This
 probably has to do with the Pipes.ByteString stuff.
 
 *** TODO Are we using AMQP channels correctly?
-Manning's RabbitMQ book suggests that channels can only be used by
-one thread at a time.  I'm not sure what this means in the presence
-of GHC green threads.
+Manning's RabbitMQ book suggests that channels can only be used by one
+thread at a time.  I'm not sure what this means in the presence of GHC
+green threads.  But it might make sense to just open two channels and
+use them unidirectionally.
 
 *** TODO Use one thread for stdout logging
 Right now, simultaneous stdout log messages can become garbled.  It
