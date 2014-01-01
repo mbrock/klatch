@@ -29,7 +29,7 @@
         else if (message.socket && message.socket.Error)
           return <ErrorMessage message={message} key={message.sequence} />;
 
-        else if (message.data && message.data.MarkAsRead)
+        else if (message['klatch.js'] && message['klatch.js'].MarkAsRead)
           return <MarkedAsRead key={message.sequence} />;
 
         else
