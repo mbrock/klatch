@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveGeneric, OverloadedStrings #-}
 
-module Main where
+module Klatch.Envoy.Envoy (main) where
 
 import Control.Applicative          ((<$>), (<*>))
 import Control.Concurrent.STM.TChan (newTChanIO, TChan)

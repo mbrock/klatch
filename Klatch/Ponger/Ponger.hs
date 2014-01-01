@@ -1,6 +1,6 @@
 {-# LANGUAGE ScopedTypeVariables, ViewPatterns, OverloadedStrings #-}
 
-module Main where
+module Klatch.Ponger.Ponger (main) where
 
 import Control.Monad
 import Network.IRC.ByteString.Parser

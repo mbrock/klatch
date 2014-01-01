@@ -8,113 +8,144 @@ maintainer: mikael@goula.sh
 build-type: Simple
 cabal-version: >=1.8
 
-executable embassy
-  main-is: Klatch/Embassy/Embassy.hs
+library
   ghc-options: -Wall
-  build-depends: base,
-                 transformers,
-                 mtl,
-                 text,
-                 stm,
-                 containers,
-                 exceptions,
-                 bytestring,
-                 unix,
-                 uuid,
-                 time,
-                 scotty,
-                 aeson,
-                 amqp,
-                 pipes,
-                 pipes-network,
-                 pipes-concurrency,
-                 pipes-bytestring,
-                 pipes-parse,
-                 network-simple,
-                 ghc-prim,
-                 async,
-                 optparse-applicative,
-                 hslogger,
-                 old-locale,
-                 hscolour,
-                 directory,
-                 irc-bytestring,
-                 attoparsec,
-                 warp,
-                 wai,
-                 wai-extra,
-                 wai-eventsource,
-                 http-types,
-                 blaze-builder,
-                 conduit,
-                 wai-middleware-static,
-                 QuickCheck,
-                 unordered-containers
+  exposed-modules: Klatch.Common.AMQP
+                 , Klatch.Common.Params
+                 , Klatch.Common.Types
+                 , Klatch.Common.Util
+                 , Klatch.Embassy.Embassy
+                 , Klatch.Embassy.FileLog
+                 , Klatch.Embassy.HTTP
+                 , Klatch.Envoy.Envoy
+                 , Klatch.Envoy.Queue
+                 , Klatch.Envoy.Socket
+                 , Klatch.Ponger.Ponger
+  build-depends: aeson                             == 0.6.*
+               , QuickCheck                        == 2.6.*
+               , amqp                              == 0.7.*
+               , ansi-terminal                     == 0.6.*
+               , array                             == 0.4.*
+               , async                             == 2.0.*
+               , attoparsec                        == 0.10.*
+               , base                              == 4.6.*
+               , base-unicode-symbols              == 0.2.*
+               , base64-bytestring                 == 1.0.*
+               , bifunctors                        == 4.1.*
+               , binary                            == 0.7.*
+               , blaze-builder                     == 0.3.*
+               , blaze-builder-conduit             == 1.0.*
+               , byteable                          == 0.1.*
+               , byteorder                         == 1.0.*
+               , bytestring                        == 0.10.*
+               , case-insensitive                  == 1.0.*
+               , clock                             == 0.4.*
+               , comonad                           == 4.0.*
+               , conduit                           == 1.0.*
+               , containers                        == 0.5.*
+               , contravariant                     == 0.4.*
+               , cryptohash                        == 0.11.*
+               , data-binary-ieee754               == 0.4.*
+               , data-default                      == 0.5.*
+               , data-default-class                == 0.0.*
+               , data-default-instances-base       == 0.0.*
+               , data-default-instances-containers == 0.0.*
+               , data-default-instances-dlist      == 0.0.*
+               , data-default-instances-old-locale == 0.0.*
+               , deepseq                           == 1.3.*
+               , directory                         == 1.2.*
+               , distributive                      == 0.3.*
+               , dlist                             == 0.6.*
+               , exceptions                        == 0.3.*
+               , fast-logger                       == 2.0.*
+               , filepath                          == 1.3.*
+               , free                              == 4.2.*
+               , ghc-prim                          == 0.3.*
+               , hashable                          == 1.1.*
+               , hscolour                          == 1.20.*
+               , hslogger                          == 1.2.*
+               , http-attoparsec                   == 0.1.*
+               , http-date                         == 0.0.*
+               , http-types                        == 0.8.*
+               , integer-gmp                       == 0.5.*
+               , irc-bytestring                    == 0.1.*
+               , lifted-base                       == 0.2.*
+               , mmorph                            == 1.0.*
+               , monad-control                     == 0.3.*
+               , mtl                               == 2.1.*
+               , nats                              == 0.1.*
+               , network                           == 2.4.*
+               , network-conduit                   == 1.0.*
+               , network-info                      == 0.2.*
+               , network-simple                    == 0.3.*
+               , old-locale                        == 1.0.*
+               , old-time                          == 1.1.*
+               , optparse-applicative              == 0.7.*
+               , parsec                            == 3.1.*
+               , pipes                             == 4.0.*
+               , pipes-bytestring                  == 1.0.*
+               , pipes-concurrency                 == 2.0.*
+               , pipes-network                     == 0.6.*
+               , pipes-parse                       == 2.0.*
+               , pipes-safe                        == 2.0.*
+               , pretty                            == 1.1.*
+               , primitive                         == 0.5.*
+               , process                           == 1.1.*
+               , profunctors                       == 4.0.*
+               , random                            == 1.0.*
+               , regex-base                        == 0.93.*
+               , regex-compat                      == 0.95.*
+               , regex-posix                       == 0.95.*
+               , resourcet                         == 0.4.*
+               , rts                               == 1.0.*
+               , scotty                            == 0.6.*
+               , semigroupoids                     == 4.0.*
+               , semigroups                        == 0.12.*
+               , simple-sendfile                   == 0.2.*
+               , split                             == 0.2.*
+               , stm                               == 2.4.*
+               , stringsearch                      == 0.3.*
+               , syb                               == 0.4.*
+               , tagged                            == 0.7.*
+               , template-haskell                  == 2.8.*
+               , text                              == 0.11.*
+               , time                              == 1.4.*
+               , transformers                      == 0.3.*
+               , transformers-base                 == 0.4.*
+               , transformers-compat               == 0.1.*
+               , unix                              == 2.6.*
+               , unix-compat                       == 0.4.*
+               , unix-time                         == 0.2.*
+               , unordered-containers              == 0.2.*
+               , uuid                              == 1.3.*
+               , vault                             == 0.3.*
+               , vector                            == 0.10.*
+               , void                              == 0.6.*
+               , wai                               == 2.0.*
+               , wai-eventsource                   == 2.0.*
+               , wai-extra                         == 2.0.*
+               , wai-logger                        == 2.0.*
+               , wai-middleware-static             == 0.4.*
+               , warp                              == 2.0.*
+               , word8                             == 0.0.*
+               , zlib                              == 0.5.*
+               , zlib-bindings                     == 0.1.*
+               , zlib-conduit                      == 1.0.*
 
 executable envoy
-  main-is: Klatch/Envoy/Envoy.hs
+  hs-source-dirs: src-main
+  main-is: Envoy.hs
   ghc-options: -Wall
-  build-depends: base,
-                 transformers,
-                 mtl,
-                 text,
-                 stm,
-                 containers,
-                 exceptions,
-                 bytestring,
-                 unix,
-                 uuid,
-                 time,
-                 scotty,
-                 aeson,
-                 amqp,
-                 pipes,
-                 pipes-network,
-                 pipes-concurrency,
-                 pipes-bytestring,
-                 pipes-parse,
-                 network-simple,
-                 ghc-prim,
-                 async,
-                 optparse-applicative,
-                 hslogger,
-                 old-locale,
-                 hscolour,
-                 irc-bytestring,
-                 attoparsec,
-                 QuickCheck,
-                 unordered-containers
+  build-depends: base, klatch
+
+executable embassy
+  hs-source-dirs: src-main
+  main-is: Embassy.hs
+  ghc-options: -Wall
+  build-depends: base, klatch
 
 executable ponger
-  main-is: Klatch/Ponger/Main.hs
+  hs-source-dirs: src-main
+  main-is: Ponger.hs
   ghc-options: -Wall
-  build-depends: base,
-                 transformers,
-                 mtl,
-                 text,
-                 stm,
-                 containers,
-                 exceptions,
-                 bytestring,
-                 unix,
-                 uuid,
-                 time,
-                 aeson,
-                 amqp,
-                 pipes,
-                 pipes-concurrency,
-                 pipes-bytestring,
-                 pipes-parse,
-                 pipes-network,
-                 network-simple,
-                 ghc-prim,
-                 async,
-                 optparse-applicative,
-                 hslogger,
-                 old-locale,
-                 hscolour,
-                 directory,
-                 irc-bytestring,
-                 attoparsec,
-                 QuickCheck,
-                 unordered-containers
+  build-depends: base, klatch

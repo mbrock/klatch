@@ -1,6 +1,6 @@
 {-# LANGUAGE ScopedTypeVariables, ViewPatterns #-}
 
-module Main where
+module Klatch.Embassy.Embassy (main) where
 
 import Control.Concurrent.Async      (async, link)
 import Control.Concurrent.STM        (atomically)
