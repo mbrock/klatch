@@ -1,10 +1,11 @@
 # Klatch
 
 **Klatch** (license: AGPL3) is an ongoing attempt to create a happy
-IRC experience.  It's a kind of bouncer together with a special client
-that only works with this bouncer.  The reason is that the bouncer and
-the client don't communicate via the IRC protocol; they use HTTP
-instead, and the client is a modern JavaScript application.
+IRC experience.
+
+If you're familiar with the concept of an ``IRC bouncer,'' Klatch
+resembles one of those, one major difference being that the bouncer
+and the client communicate via HTTP instead of IRC.
 
 A major focus of Klatch is to be smart about historical data.  To
 ensure high connectivity, an isolated process maintains the IRC server
@@ -12,12 +13,12 @@ connections logging all messages into a persistent queue.  The idea is
 that we should be able to upgrade the complex user-facing parts of the
 system without disturbing the simple IRC communication.
 
-The log-based design of Klatch makes it natural for new user interface
-features to function "retroactively," instead of only on the chat
-activity that happens after the feature is introduced.  Since the
-client is basically defined as a map & fold operation on the entire
-recorded history, we get a nice platform for experimenting with IRC
-client features.
+We also use an architecture similar to what's called ``event
+sourcing'' in some circles, meaning that a simple log of events is the
+``source of truth,'' instead of a structured database.  Booting a
+client involves bringing it up to speed by ``replaying'' the event
+log.  This is a somewhat experimental technique, but we think it is
+compelling.
 
 ## Dependencies
 
