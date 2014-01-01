@@ -8,14 +8,14 @@
   Klatch.MessageModel = MessageModel;
 
   MessageModel.prototype.getNameForArea = function () {
-    var msg = this.irc;
-    if (this.irc)
-      if (this.irc.prefix && this.irc.prefix.Server) {
-        return this.irc.prefix.Server.host;
-      } else if (this.irc.command === 'PRIVMSG') {
-        return this.irc.params[0] + ' (' + this.irc.name + ')';
+    var msg = this.irc && this.irc.Received;
+    if (msg)
+      if (msg.prefix && msg.prefix.Server) {
+        return msg.prefix.Server.host;
+      } else if (msg.command === 'PRIVMSG') {
+        return msg.params[0] + ' (' + msg.name + ')';
       } else {
-        return '*Server*';
+        return msg.name;
       }
 
     else if (this.socket && this.socket.Error)
