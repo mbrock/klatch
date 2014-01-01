@@ -3,7 +3,7 @@
 **Klatch** (license: AGPL3) is an ongoing attempt to create a happy
 IRC experience.
 
-If you're familiar with the concept of an ``IRC bouncer,'' Klatch
+If you're familiar with the concept of an "IRC bouncer," Klatch
 resembles one of those, one major difference being that the bouncer
 and the client communicate via HTTP instead of IRC.
 
@@ -13,12 +13,11 @@ connections logging all messages into a persistent queue.  The idea is
 that we should be able to upgrade the complex user-facing parts of the
 system without disturbing the simple IRC communication.
 
-We also use an architecture similar to what's called ``event
-sourcing'' in some circles, meaning that a simple log of events is the
-``source of truth,'' instead of a structured database.  Booting a
-client involves bringing it up to speed by ``replaying'' the event
-log.  This is a somewhat experimental technique, but we think it is
-compelling.
+We also use an architecture similar to what's called *event sourcing*
+in some circles, meaning that a simple log of events is the "source of
+truth," instead of a structured database.  Booting a client involves
+bringing it up to speed by "replaying" the event log.  This is a
+somewhat experimental technique, but we think it is compelling.
 
 ## Dependencies
 
