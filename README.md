@@ -44,3 +44,11 @@ in one terminal or screen, and
 
 in another.  Now you can visit the URL announced by the "embassy"
 process.
+
+Client commands for connecting to IRC servers and joining IRC channels
+are not implemented yet.  In the meantime, there are some scripts
+in `bin/remote-control` for this.  For example, you could run this:
+
+    $ ./do-connect.sh freenode irc.freenode.net 6667
+    $ ./do-login.sh freenode snufkin snufkin
+    $ ./do-join.sh freenode \#moomin
