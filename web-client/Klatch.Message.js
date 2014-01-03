@@ -31,7 +31,7 @@
   };
 
   MessageModel.prototype.getUserNick = function () {
-    var msg = this.irc;
+    var msg = this.irc && this.irc.Received;
     return msg && msg.prefix && msg.prefix.User && msg.prefix.User.nick;
   };
 })();
