@@ -24,17 +24,18 @@ import Pipes.Concurrent    (Output, Input, Buffer (Unbounded), spawn, fromInput)
 import Pipes.Network.TCP   (fromSocket, toSocket)
 import System.Locale
 
-import qualified Data.ByteString         as BS
-import qualified Data.ByteString.Lazy    as BSL
-import qualified Data.Map                as Map
-import qualified Data.Text               as T
-import qualified Data.Text.Encoding      as E
-import qualified Data.Text.Lazy          as TL
-import qualified Data.Text.Lazy.Encoding as EL
-import qualified Pipes.ByteString        as PBS
-import qualified Pipes.Parse             as PP
-import qualified Pipes.Prelude           as P
-import qualified System.Posix.Signals    as Sig
+import qualified Data.ByteString          as BS
+import qualified Data.ByteString.Lazy     as BSL
+import qualified Data.Map                 as Map
+import qualified Data.Text                as T
+import qualified Data.Text.Encoding       as E
+import qualified Data.Text.Encoding.Error as EE
+import qualified Data.Text.Lazy           as TL
+import qualified Data.Text.Lazy.Encoding  as EL
+import qualified Pipes.ByteString         as PBS
+import qualified Pipes.Parse              as PP
+import qualified Pipes.Prelude            as P
+import qualified System.Posix.Signals     as Sig
 
 outputtingTo :: (Output a -> IO ()) -> (Input a -> IO ()) -> IO ()
 outputtingTo f g = spawn Unbounded >>= uncurry (>>) . (f *** g)
@@ -75,7 +76,7 @@ toUTF8 :: T.Text -> BS.ByteString
 toUTF8 = E.encodeUtf8
 
 fromUTF8 :: BS.ByteString -> T.Text
-fromUTF8 = E.decodeUtf8
+fromUTF8 = E.decodeUtf8With EE.lenientDecode
 
 fromLazyUTF8 :: BSL.ByteString -> T.Text
 fromLazyUTF8 = fromUTF8 . BSL.toStrict
