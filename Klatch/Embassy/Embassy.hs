@@ -8,7 +8,6 @@ import Control.Concurrent.STM.TChan
 import Control.Concurrent.STM.TVar
 import Control.Monad                 (forever, when)
 import Control.Monad.IO.Class        (liftIO)
-import Data.Text                     (Text)
 import Pipes                         (Pipe, Producer, (>->),
                                       await, yield, each)
 import Prelude                hiding (sequence)
@@ -56,9 +55,11 @@ main = do
 
     runEffectsConcurrently
        (contents commandQueue >-> encoder >-> writeTo amqp)
-       ((replaying olds
-         >> (readFrom amqp >-> decodingIrcMsgs state
-                           >-> into (writeToLog fileLog)))
+       ((replaying olds >>
+          (readFrom amqp >-> decoder
+                         >-> skipNothings
+                         >-> into (writeToLog fileLog)))
+        >-> forever (decodeIrcMsg state)
         >-> toChannel eventQueue)
 
 replaying :: [Event] -> Producer Event IO ()
@@ -66,10 +67,6 @@ replaying olds = do
   yield . metaevent $ MetaReplaying (length olds)
   each olds
   yield . metaevent $ MetaStreaming
-
-decodingIrcMsgs :: EmbassyState -> Pipe Text Event IO ()
-decodingIrcMsgs state =
-  loggingReads >-> decoder >-> skipNothings >-> forever (decodeIrcMsg state)
 
 decodeIrcMsg :: EmbassyState -> Pipe Event Event IO ()
 decodeIrcMsg state = do
