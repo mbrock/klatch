@@ -1,0 +1,3 @@
+[submodule "irc-bytestring"]
+	path = irc-bytestring
+	url = https://github.com/mbrock/irc-bytestring
