@@ -83,13 +83,16 @@
 
   var Utterance = React.createClass({
     render: function () {
-      var source, citeStyle;
+      var source, citeStyle, text;
 
       if (this.props.by) {
         citeStyle = { color: Klatch.Clever.assignColor(this.props.by) };
         source = <cite style={citeStyle}>{this.props.by}</cite>;
       }
-      return <p>{source}<span>{this.props.text}</span></p>;
+
+      text = Klatch.Clever.prettifyHaskell(this.props.text);
+
+      return <p>{source}<span>{text}</span></p>;
     }
   });
 })();
