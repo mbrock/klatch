@@ -8,6 +8,7 @@ import Control.Concurrent.STM.TChan
 import Control.Concurrent.STM.TVar
 import Control.Monad                 (forever, when)
 import Control.Monad.IO.Class        (liftIO)
+import Data.Maybe                    (fromMaybe)
 import Pipes                         (Pipe, (>->), await, yield, each)
 import Prelude                hiding (sequence)
 
@@ -35,10 +36,6 @@ main = do
       writeLog $ "The archives go back to " ++
                  bolded (formatTimestamp epoch) ++ "."
 
-    let nextSequence = case olds of
-                         [] -> -1
-                         _  -> sequence (last olds)
-
     (amqp, _) <- startAmqp EmbassyRole
 
     onCtrlC $ do
@@ -48,7 +45,7 @@ main = do
 
     eventQueue   <- newTChanIO
     commandQueue <- newTChanIO
-    state        <- newTVarIO nextSequence
+    state        <- newTVarIO (fromMaybe (-1) (oldestSequence olds))
 
     async (Klatch.Embassy.HTTP.run eventQueue commandQueue) >>= link
 
@@ -76,6 +73,10 @@ decodeIrcMsg state = do
       nextId <- liftIO (nextEventId state)
       yield $ x { payload = d, sequence = nextId }
     Nothing -> return ()
+
+oldestSequence :: [Event] -> Maybe Sequence
+oldestSequence [] = Nothing
+oldestSequence xs = Just . sequence . last $ xs
 
 nextEventId :: EmbassyState -> IO Sequence
 nextEventId state = atomically (modifyTVar state (+ 1) >> readTVar state)
