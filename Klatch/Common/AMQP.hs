@@ -103,7 +103,7 @@ connect role params = do
   return $ (Queue queueChan (writeTChan outputChan), writer)
 
 readMsg :: Message -> Text
-readMsg = TL.toStrict . LE.decodeUtf8 . msgBody
+readMsg = fromLazyUTF8 . msgBody
 
 makeMsg :: Text -> Message
 makeMsg t = newMsg { msgBody = s, msgDeliveryMode = Just Persistent }
