@@ -165,3 +165,9 @@ parseIRCLine (Line line) =
 
 toIRCLine :: IRCMsg -> Line
 toIRCLine = Line . fromUTF8 . fromIRCMsg
+
+whileJust :: (Functor m, Monad m) => m (Maybe a) -> m [a]
+whileJust p = p >>= maybe (return []) (\x -> (x:) <$> whileJust p)
+
+availableTChanContents :: TChan a -> STM [a]
+availableTChanContents c = whileJust (tryReadTChan c)

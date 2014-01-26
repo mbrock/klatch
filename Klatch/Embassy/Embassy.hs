@@ -8,8 +8,7 @@ import Control.Concurrent.STM.TChan
 import Control.Concurrent.STM.TVar
 import Control.Monad                 (forever, when)
 import Control.Monad.IO.Class        (liftIO)
-import Pipes                         (Pipe, Producer, (>->),
-                                      await, yield, each)
+import Pipes                         (Pipe, (>->), await, yield, each)
 import Prelude                hiding (sequence)
 
 import Klatch.Embassy.FileLog
@@ -55,25 +54,18 @@ main = do
 
     runEffectsConcurrently
        (contents commandQueue >-> encoder >-> writeTo amqp)
-       ((replaying olds >>
+       ((each olds >>
           (readFrom amqp >-> decoder
                          >-> skipNothings
                          >-> into (writeToLog fileLog)))
         >-> forever (decodeIrcMsg state)
         >-> toChannel eventQueue)
 
-replaying :: [Event] -> Producer Event IO ()
-replaying olds = do
-  yield . metaevent $ MetaReplaying (length olds)
-  each olds
-  yield . metaevent $ MetaStreaming
-
 decodeIrcMsg :: EmbassyState -> Pipe Event Event IO ()
 decodeIrcMsg state = do
   x <- await
   e <- case payload x of
          LineReceived name line -> do
-           writeLog $ bolded "IRC: " ++ show (parseIRCLine line)
            case parseIRCLine line of
              Just msg -> return $ Just (IRCReceived name msg)
              _        -> return Nothing

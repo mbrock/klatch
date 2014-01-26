@@ -66,8 +66,15 @@ stream c = do
   c' <- liftIO . atomically $ cloneTChan c
   liftIO $ writeLog "Accepting web visitor."
   forever $ do
+    xs <- liftIO . atomically $ availableTChanContents c'
+    mapM_ C.yield $ map (makeServerEvent . encode) (replayOf xs)
     x <- liftIO . atomically $ readTChan c'
     C.yield $ makeServerEvent (encode x)
+
+replayOf :: [Event] -> [Event]
+replayOf xs = (metaevent begin : xs) ++ [metaevent end]
+  where begin = MetaReplaying (length xs)
+        end   = MetaStreaming
 
 makeServerEvent :: ByteString -> ServerEvent
 makeServerEvent bs = ServerEvent Nothing Nothing [fromLazyByteString bs]
