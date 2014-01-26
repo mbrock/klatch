@@ -44,7 +44,7 @@ runEffectsConcurrently :: Effect IO a -> Effect IO b -> IO ()
 runEffectsConcurrently a b = void $ concurrently (runEffect a) (runEffect b)
 
 encoder :: ToJSON a => Pipe a T.Text IO ()
-encoder = P.map (TL.toStrict . EL.decodeUtf8 . encode)
+encoder = P.map (fromLazyUTF8 . encode)
 
 decoder :: FromJSON a => Pipe T.Text (Maybe a) IO ()
 decoder = P.map (decode . BSL.fromStrict . E.encodeUtf8)
