@@ -11,7 +11,7 @@ import Control.Concurrent.Async
 import Control.Concurrent.STM.TChan
 import Control.Monad
 import Control.Monad.STM
-import Data.Attoparsec.ByteString (IResult (..))
+import Data.Attoparsec.ByteString (parseOnly)
 import Data.Aeson
 import Data.Time.Clock
 import Data.Time.Clock.POSIX
@@ -30,8 +30,6 @@ import qualified Data.Map                 as Map
 import qualified Data.Text                as T
 import qualified Data.Text.Encoding       as E
 import qualified Data.Text.Encoding.Error as EE
-import qualified Data.Text.Lazy           as TL
-import qualified Data.Text.Lazy.Encoding  as EL
 import qualified Pipes.ByteString         as PBS
 import qualified Pipes.Parse              as PP
 import qualified Pipes.Prelude            as P
@@ -159,8 +157,8 @@ awaitOnce f = forever $ await >>= \x -> case f x of
 
 parseIRCLine :: Line -> Maybe IRCMsg
 parseIRCLine (Line line) =
-  case toIRCMsg . toUTF8 $ T.append line "\r\n" of
-    Done _ r -> Just r
+  case parseOnly ircLine . toUTF8 $ T.append line "\r\n" of
+    Right r -> Just r
     _ -> Nothing
 
 toIRCLine :: IRCMsg -> Line
