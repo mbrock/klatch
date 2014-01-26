@@ -64,12 +64,17 @@ handleClientCommands q req = do
 stream :: TChan Event -> C.Source IO ServerEvent
 stream c = do
   c' <- liftIO . atomically $ cloneTChan c
-  liftIO $ writeLog "Accepting web visitor."
-  forever $ do
-    xs <- liftIO . atomically $ availableTChanContents c'
-    mapM_ C.yield $ map (makeServerEvent . encode) (replayOf xs)
-    x <- liftIO . atomically $ readTChan c'
-    C.yield $ makeServerEvent (encode x)
+  replayOldEvents c'
+  forever $ liftIO (atomically $ readTChan c') >>= yieldEvent
+
+yieldEvent :: Event -> C.Source IO ServerEvent
+yieldEvent = C.yield . makeServerEvent . encode
+
+replayOldEvents :: TChan Event -> C.Source IO ServerEvent
+replayOldEvents c = do
+  xs <- liftIO . atomically $ availableTChanContents c
+  writeLog $ "Sending " ++ show (length xs) ++ " events to new visitor."
+  mapM_ yieldEvent (replayOf xs)
 
 replayOf :: [Event] -> [Event]
 replayOf xs = (metaevent begin : xs) ++ [metaevent end]
