@@ -46,7 +46,14 @@ streamEvents c app req =
   case (requestMethod req, pathInfo req) of
     (m, ["api", "events"]) | m == methodGet ->
       eventSourceAppSource (stream c) req
+    (m, ["events", "since", x]) | m == methodGet ->
+      serveEventsSince (Sequence (read x)) c
     _ -> app req
+
+serveEventsSince :: Sequence -> TChan Command -> Application
+serveEventsSince i c =
+  return . responseLBS ok200 [] . encode . dropWhile ((<= c) . sequence) <$>
+    (io . atomically $ cloneTChan >>= availableTChanContents)
 
 handleClientCommands :: TChan Command -> Application
 handleClientCommands q req = do
