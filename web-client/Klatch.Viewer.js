@@ -37,8 +37,6 @@
       var update = {};
       var source;
 
-      console.log(data);
-
       if (data.meta && data.meta.Replaying) {
         update.replaying = data.meta.Replaying.count;
         update.replayed = 0;
