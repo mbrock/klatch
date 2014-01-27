@@ -63,7 +63,10 @@
                          minimized={this.props.areaMinimization[source]} />);
       }
 
-      return <div className="area-splitter">{areas}</div>;
+      return <div className="area-splitter">
+        {this.props.online ? "Online" : "Offline"}
+        {areas}
+      </div>;
     }
   });
 

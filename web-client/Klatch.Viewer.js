@@ -66,7 +66,8 @@
         return <Replaying progress={progress} />;
       } else
         return <AreaSplitter messages={this.state.messages}
-                             areaMinimization={this.state.areaMinimization} />;
+                             areaMinimization={this.state.areaMinimization}
+                             online={this.state.online} />;
     },
 
     updateReplayCount: function (isMetamessage) {
@@ -91,6 +92,11 @@
 
       else if (data.meta && data.meta.Streaming) {
         update.replaying = update.replayed = 0;
+      }
+
+      else if (data.meta && (data.meta.hasOwnProperty('Online'))) {
+        update.online = data.meta.Online;
+        console.log(update);
       }
 
       else if ((data.irc && data.irc.Received) ||

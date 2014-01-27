@@ -23,7 +23,7 @@ import qualified Klatch.Embassy.HTTP
 type EmbassyState = TVar Sequence
 
 offlineMode :: Bool
-offlineMode = False
+offlineMode = True
 
 main :: IO ()
 main = do
@@ -54,14 +54,17 @@ main = do
     if offlineMode
       then do
         writeLog $ "Offline mode; not reading queues."
-        runEffect $ each olds >-> forever (decodeIrcMsg state)
-                              >-> toChannel eventQueue
+        
+        runEffect $
+          (yield (metaevent (MetaOnline False)) >> each olds)
+            >-> forever (decodeIrcMsg state) 
+            >-> toChannel eventQueue
         wait webServer
       else do
         (amqp, _) <- startAmqp EmbassyRole
         runEffectsConcurrently
            (contents commandQueue >-> encoder >-> writeTo amqp)
-           ((each olds >>
+           (((yield . metaevent $ MetaOnline False) >> each olds >>
               (readFrom amqp >-> decoder
                              >-> skipNothings
                              >-> into (writeToLog fileLog)))

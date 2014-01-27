@@ -61,6 +61,7 @@ instance Arbitrary Event where
 
 data Payload = MetaReplaying Int
              | MetaStreaming
+             | MetaOnline Bool
 
              | SocketStarted ServerName HostName Port
              | SocketSucceeded ServerName
@@ -81,6 +82,7 @@ instance Arbitrary Payload where
   arbitrary = oneof [
       MetaReplaying <$> arbitrary
     , return MetaStreaming
+    , MetaOnline <$> arbitrary
     , SocketStarted <$> arbitrary <*> arbitrary <*> arbitrary
     , SocketSucceeded <$> arbitrary
     , SocketFailed <$> arbitrary <*> arbitrary
@@ -129,7 +131,9 @@ instance FromJSON Payload where
     flip oneOf v [
       "meta" ==> oneOf [
         "Replaying" ==> \x -> MetaReplaying <$> x .: "count",
-        "Streaming" ==> \(_ :: Value) -> return MetaStreaming ],
+        "Streaming" ==> \(_ :: Value) -> return MetaStreaming,
+        "Online"    ==> \x -> return (MetaOnline x)
+        ],
 
       "socket" ==> oneOf [
         "Started"   ==>
@@ -213,6 +217,8 @@ payloadAttribute p = case p of
     "meta" .== "Replaying" .= object ["count" .= a]
   MetaStreaming ->
     "meta" .== "Streaming" .= True
+  MetaOnline a ->
+    "meta" .== "Online" .= a
   SocketStarted a b c ->
     "socket" .== "Started" .= object ["name" .= a, "host" .= b, "port" .= c]
   SocketSucceeded a ->
