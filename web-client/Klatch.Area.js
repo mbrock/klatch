@@ -139,7 +139,7 @@
       var content = this.refs.content.getDOMNode();
       $(content).animate({
         scrollTop: content.scrollHeight
-      }, 250);
+      }, 600);
     }
   });
 
