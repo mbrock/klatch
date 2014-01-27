@@ -72,6 +72,16 @@ tag.  The client exposes it to the user and logs her choices.
 
 ** Client stuff
 
+*** TODO Refactor to "collaborative monoid homomorphism"
+We want to define:
+
+  this.setState(runMorphisms({
+    inhabitation: [Inhabitation.default, Inhabitation.update],
+    statistics: [Statistics.default, Statistics.update],
+    metadata: [Metadata.default, Metadata.update],
+    view: [View.default, View.update]
+  }, state));
+
 *** TODO Commands
 There should be a declarative system for user commands, so we can do
 completion and interactive help.  To start, just CONNECT, JOIN, and
