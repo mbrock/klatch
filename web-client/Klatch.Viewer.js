@@ -10,7 +10,8 @@
         replaying: 0,
         replayed: 0,
         messages: { },
-        areaMinimization: { }
+        areaMinimization: { },
+        inhabitations: { }
       };
     },
 
@@ -33,6 +34,7 @@
     recordMessage: function (data) {
       var message = Klatch.MessageModel(data);
       var messages = this.state.messages;
+      var inhabitations = this.state.inhabitations;
       var newMessages = {};
       var update = {};
       var source;
@@ -48,9 +50,31 @@
 
       else if ((data.irc && data.irc.Received) ||
                (data.socket && data.socket.Error)) {
-        source = message.getNameForArea();
 
-        newMessages[source] = (messages[source] || []).concat(message);
+        function save (source, message) {
+          newMessages[source] = (messages[source] || []).concat(message);
+        }
+
+        if (data.irc) {
+          var msg = data.irc.Received;
+          var command = msg.command;
+
+          if (command == 'PRIVMSG') {
+            save(message.getNameForArea(), message);
+
+          } else if (command == 'NICK') {
+            for (var channelName in inhabitations)
+              if (inhabitations[channelName].indexOf(msg.name) >= 0)
+                save(channelName, message)
+
+          } else {
+            console.log(msg);
+          }
+        }
+
+        if (data.socket && data.socket.Error)
+          save(message.getNameForArea(), message);
+
         update.messages = $.extend({}, messages, newMessages);
 
         update.replayed = this.updateReplayCount(data.meta);
