@@ -115,7 +115,7 @@
 
       if (!this.props.minimized)
         messages = <div>
-                    <section className="area-content">
+                    <section className="area-content" ref="content">
                      {this.props.messages}
                     </section>
                     <InputBar area={this.props.area} />
@@ -125,6 +125,13 @@
                <AreaHeader name={this.props.area.name} />
                {messages}
               </article>);
+    },
+
+    componentDidMount: function () {
+      var content = this.refs.content.getDOMNode();
+      $(content).animate({
+        scrollTop: content.scrollHeight
+      }, 250);
     }
   });
 
