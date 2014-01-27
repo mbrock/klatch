@@ -56,7 +56,8 @@
         replayed: 0,
         messages: { },
         areaMinimization: { },
-        inhabitation: { }
+        inhabitation: { },
+        topics: { }
       };
     },
 
@@ -66,6 +67,7 @@
         return <Replaying progress={progress} />;
       } else
         return <AreaSplitter messages={this.state.messages}
+                             topics={this.state.topics}
                              areaMinimization={this.state.areaMinimization}
                              online={this.state.online} />;
     },
@@ -82,6 +84,7 @@
       var messages = this.state.messages;
       var inhabitation = this.state.inhabitation;
       var newMessages = {};
+      var newTopics = {};
       var update = {};
       var source;
 
@@ -119,6 +122,9 @@
                 save(channelName)
             
           } else if (Inhabitation.handle(inhabitation, message, save)) {
+
+          } else if (command == '332') {
+            newTopics[message.getChannelId(1)] = msg.trail;
           
           } else if (command == 'PING') {
             return;
@@ -132,6 +138,7 @@
           save(message.getNameForArea());
 
         update.messages = $.extend({}, messages, newMessages);
+        update.topics = $.extend({}, this.state.topics, newTopics);
         update.replayed = this.updateReplayCount(data.meta);
       }
 

@@ -43,6 +43,7 @@
 
       return isChannel ?
                  <Channel area={descriptor}
+                          topic={this.props.topic}
                           minimized={this.props.minimized}
                           messages={messages} />
                : <Boring name={this.props.name}
@@ -59,6 +60,7 @@
       for (source in this.props.messages) {
         messages = this.props.messages[source];
         areas.push(<Area name={source}
+                         topic={this.props.topics[source]}
                          messages={this.props.messages[source]}
                          minimized={this.props.areaMinimization[source]} />);
       }
@@ -78,11 +80,16 @@
       if (name.match(/^\w/))
         name = " " + name;
 
-      return <h1 style={style}>
-        <a href="#" rel="toggle-area-minimization" title="Hide/show"></a>
-        <a href="#" rel="mark-as-read" title="Mark as read">✔︎</a>
-        <span>{name}</span>
-      </h1>;
+      var topic = this.props.topic && <h2>{this.props.topic}</h2>;
+
+      return <div>
+        <h1 style={style}>
+          <a href="#" rel="toggle-area-minimization" title="Hide/show"></a>
+          <a href="#" rel="mark-as-read" title="Mark as read">✔︎</a>
+          <span>{name}</span>
+        </h1>
+        {topic}
+      </div>;
     },
 
     calculateColor: function () {
@@ -125,7 +132,8 @@
                    </div>;
 
       return (<article className={"area channel" + visibility}>
-               <AreaHeader name={this.props.area.name} />
+               <AreaHeader name={this.props.area.name}
+                           topic={this.props.topic} />
                {messages}
               </article>);
     },
