@@ -2,13 +2,14 @@
 
 module Klatch.Embassy.Embassy (main) where
 
-import Control.Concurrent.Async      (async, link)
+import Control.Concurrent.Async      (async, link, wait)
 import Control.Concurrent.STM        (atomically)
 import Control.Concurrent.STM.TChan
 import Control.Concurrent.STM.TVar
 import Control.Monad                 (forever, when)
 import Data.Maybe                    (fromMaybe)
-import Pipes                         (Pipe, (>->), await, yield, each)
+import Pipes                         (Pipe, (>->), await, yield, each,
+                                      runEffect)
 import Prelude                hiding (sequence)
 
 import Klatch.Embassy.FileLog
@@ -20,6 +21,9 @@ import Klatch.Common.Util
 import qualified Klatch.Embassy.HTTP
 
 type EmbassyState = TVar Sequence
+
+offlineMode :: Bool
+offlineMode = False
 
 main :: IO ()
 main = do
@@ -35,8 +39,6 @@ main = do
       writeLog $ "The archives go back to " ++
                  bolded (formatTimestamp epoch) ++ "."
 
-    (amqp, _) <- startAmqp EmbassyRole
-
     onCtrlC $ do
       writeLog $ concat [ bolded "Stopping.\n\n"
                         , "  Please await your envoys' safe homecoming.\n"
@@ -46,16 +48,25 @@ main = do
     commandQueue <- newTChanIO
     state        <- newTVarIO (fromMaybe (-1) (oldestSequence olds))
 
-    async (Klatch.Embassy.HTTP.run eventQueue commandQueue) >>= link
+    webServer <- async $ Klatch.Embassy.HTTP.run eventQueue commandQueue
+    link webServer
 
-    runEffectsConcurrently
-       (contents commandQueue >-> encoder >-> writeTo amqp)
-       ((each olds >>
-          (readFrom amqp >-> decoder
-                         >-> skipNothings
-                         >-> into (writeToLog fileLog)))
-        >-> forever (decodeIrcMsg state)
-        >-> toChannel eventQueue)
+    if offlineMode
+      then do
+        writeLog $ "Offline mode; not reading queues."
+        runEffect $ each olds >-> forever (decodeIrcMsg state)
+                              >-> toChannel eventQueue
+        wait webServer
+      else do
+        (amqp, _) <- startAmqp EmbassyRole
+        runEffectsConcurrently
+           (contents commandQueue >-> encoder >-> writeTo amqp)
+           ((each olds >>
+              (readFrom amqp >-> decoder
+                             >-> skipNothings
+                             >-> into (writeToLog fileLog)))
+            >-> forever (decodeIrcMsg state)
+            >-> toChannel eventQueue)
 
 decodeIrcMsg :: EmbassyState -> Pipe Event Event IO ()
 decodeIrcMsg state = do
