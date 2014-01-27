@@ -33,7 +33,7 @@ newtype Timestamp  = Timestamp Int   deriving (Eq, Show, Arbitrary,
                                                Num, Integral, Real,
                                                Enum, Ord)
 newtype Sequence   = Sequence Int    deriving (Eq, Show, Arbitrary, Num,
-                                               FromJSON, ToJSON)
+                                               FromJSON, ToJSON, Ord)
 newtype ServerName = ServerName Text deriving (Eq, Show, Arbitrary,
                                                FromJSON, ToJSON, Ord,
                                                IsString)

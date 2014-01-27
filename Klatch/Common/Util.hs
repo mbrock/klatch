@@ -170,5 +170,5 @@ whileJust p = p >>= maybe (return []) (\x -> (x:) <$> whileJust p)
 availableTChanContents :: TChan a -> STM [a]
 availableTChanContents = whileJust . tryReadTChan
 
-io :: MonadIO m => IO a - > m a
+io :: MonadIO m => IO a -> m a
 io = liftIO

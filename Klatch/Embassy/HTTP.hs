@@ -2,16 +2,20 @@
 
 module Klatch.Embassy.HTTP (run) where
 
+import Prelude hiding (sequence)
+
 import Klatch.Common.Types
 import Klatch.Common.Util
 
 import Blaze.ByteString.Builder.ByteString (fromLazyByteString)
+import Control.Applicative                 ((<$>))
 import Control.Concurrent.STM              (atomically)
 import Control.Concurrent.STM.TChan
 import Control.Monad                       (forever)
 import Control.Monad.IO.Class              (MonadIO, liftIO)
 import Data.Aeson                          (encode, decode)
 import Data.ByteString.Lazy                (ByteString)
+import Data.Text                           (unpack)
 import Network.HTTP.Types
 import Network.Wai
 import Network.Wai.EventSource
@@ -47,13 +51,13 @@ streamEvents c app req =
     (m, ["api", "events"]) | m == methodGet ->
       eventSourceAppSource (stream c) req
     (m, ["events", "since", x]) | m == methodGet ->
-      serveEventsSince (Sequence (read x)) c
+      serveEventsSince (Sequence (read (unpack x))) c
     _ -> app req
 
-serveEventsSince :: Sequence -> TChan Command -> Application
+serveEventsSince :: Sequence -> TChan Event -> IO Response
 serveEventsSince i c =
-  return . responseLBS ok200 [] . encode . dropWhile ((<= c) . sequence) <$>
-    (io . atomically $ cloneTChan >>= availableTChanContents)
+  responseLBS ok200 [] . encode . dropWhile ((<= i) . sequence) <$>
+    (io . atomically $ cloneTChan c >>= availableTChanContents)
 
 handleClientCommands :: TChan Command -> Application
 handleClientCommands q req = do
