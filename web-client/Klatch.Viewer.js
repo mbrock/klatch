@@ -4,6 +4,51 @@
   var Replaying = Klatch.Replaying;
   var AreaSplitter = Klatch.AreaSplitter;
 
+  var Inhabitation = {
+    QUIT: function (inhabitation, name, msg, save) {
+      for (var key in inhabitation)
+        if (inhabitation[key].indexOf(name) != -1) {
+          save(key);
+
+          inhabitation[key] = inhabitation[key].filter(
+            function (x) { return x != name; });
+        }
+    },
+
+    JOIN: function (inhabitation, name, msg, save) {
+      var channel = msg.getChannelId();
+      if (!inhabitation.hasOwnProperty(channel))
+        inhabitation[channel] = [];
+
+      inhabitation[channel].push(name);
+
+      save(channel);
+    },
+
+    PART: function (inhabitation, name, msg, save) {
+      var channel = msg.getChannelId();
+
+      if (!inhabitation.hasOwnProperty(channel))
+        return;
+
+      save(channel);
+
+      inhabitation[channel] = inhabitation[channel].filter(
+        function (x) { return x != name; });
+    },
+
+    handle: function (inhabitation, msg, save) {
+      var irc = msg.irc.Received;
+      if (this.hasOwnProperty(irc.command)) {
+        var nick = irc.prefix.User ? irc.prefix.User.nick : "[unknown]";
+        this[irc.command](inhabitation, nick, msg, save);
+        return true;
+      }
+
+      return false;
+    }
+  };
+
   Klatch.Viewer = React.createClass({
     getInitialState: function () {
       return {
@@ -11,7 +56,7 @@
         replayed: 0,
         messages: { },
         areaMinimization: { },
-        inhabitations: { }
+        inhabitation: { }
       };
     },
 
@@ -34,7 +79,7 @@
     recordMessage: function (data) {
       var message = Klatch.MessageModel(data);
       var messages = this.state.messages;
-      var inhabitations = this.state.inhabitations;
+      var inhabitation = this.state.inhabitation;
       var newMessages = {};
       var update = {};
       var source;
@@ -51,7 +96,7 @@
       else if ((data.irc && data.irc.Received) ||
                (data.socket && data.socket.Error)) {
 
-        function save (source, message) {
+        function save (source) {
           newMessages[source] = (messages[source] || []).concat(message);
         }
 
@@ -60,12 +105,17 @@
           var command = msg.command;
 
           if (command == 'PRIVMSG') {
-            save(message.getNameForArea(), message);
-
+            save(message.getNameForArea());
+            
           } else if (command == 'NICK') {
-            for (var channelName in inhabitations)
-              if (inhabitations[channelName].indexOf(msg.name) >= 0)
-                save(channelName, message)
+            for (var channelName in inhabitation)
+              if (inhabitation[channelName].indexOf(msg.name) >= 0)
+                save(channelName)
+            
+          } else if (Inhabitation.handle(inhabitation, message, save)) {
+          
+          } else if (command == 'PING') {
+            return;
 
           } else {
             console.log(msg);
@@ -73,10 +123,9 @@
         }
 
         if (data.socket && data.socket.Error)
-          save(message.getNameForArea(), message);
+          save(message.getNameForArea());
 
         update.messages = $.extend({}, messages, newMessages);
-
         update.replayed = this.updateReplayCount(data.meta);
       }
 

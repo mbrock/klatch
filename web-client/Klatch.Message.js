@@ -13,7 +13,7 @@
       if (msg.prefix && msg.prefix.Server) {
         return msg.prefix.Server.host;
       } else if (msg.command === 'PRIVMSG') {
-        return msg.params[0] + ' (' + msg.name + ')';
+        return this.getChannelId();
       } else {
         return msg.name;
       }
@@ -24,6 +24,11 @@
     else
       return '*Unknown*';
   };
+
+  MessageModel.prototype.getChannelId = function () {
+    var msg = this.irc && this.irc.Received;
+    return msg.params[0] + ' (' + msg.name + ')';
+  },
 
   MessageModel.prototype.getServerName = function () {
     if (this.irc && this.irc.Received)

@@ -16,8 +16,12 @@
       }
 
       if (irc.command === 'PRIVMSG' && (source = message.getUserNick())) {
-        source = this.props.sourceDiffers ? source: null;
+        source = this.props.sourceDiffers ? source : null;
         content = <Utterance by={source} text={irc.trail} />;
+
+      } else if (irc.prefix.User && (source = message.getUserNick())) {
+        source = this.props.sourceDiffers ? source : null;
+        content = <UserAction by={source} msg={irc}/>;
 
       } else {
         content = <span>
@@ -91,8 +95,24 @@
       }
 
       text = Klatch.Clever.prettifyHaskell(this.props.text);
-
+      
       return <p>{source}<span>{text}</span></p>;
     }
   });
+
+  var UserAction = React.createClass({
+    render: function () {
+      var source, citeStyle, text;
+
+      if (this.props.by) {
+        citeStyle = { color: Klatch.Clever.assignColor(this.props.by) };
+        source = <span style={citeStyle}>{this.props.by}</span>;
+      }
+
+      text = <span>{this.props.msg.command}</span>;
+
+      return <p>{source} {text}</p>;
+    }
+  });
+ 
 })();
