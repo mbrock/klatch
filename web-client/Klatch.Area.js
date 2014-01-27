@@ -127,7 +127,15 @@
               </article>);
     },
 
+    componentDidUpdate: function () {
+      this.scrollDown();
+    },
+
     componentDidMount: function () {
+      this.scrollDown();
+    },
+
+    scrollDown: function () {
       var content = this.refs.content.getDOMNode();
       $(content).animate({
         scrollTop: content.scrollHeight
