@@ -12,7 +12,7 @@ import Control.Applicative                 ((<$>))
 import Control.Concurrent.STM              (atomically)
 import Control.Concurrent.STM.TChan
 import Control.Monad                       (forever)
-import Control.Monad.IO.Class              (MonadIO, liftIO)
+import Control.Monad.IO.Class              (MonadIO)
 import Data.Aeson                          (encode, decode)
 import Data.ByteString.Lazy                (ByteString)
 import Data.Text                           (unpack)
@@ -33,7 +33,7 @@ url :: String
 url = "http://localhost:" ++ show port ++ "/"
 
 run :: MonadIO m => TChan Event -> TChan Command -> m ()
-run c q = liftIO $ do
+run c q = io $ do
   writeLog $ "Starting web server on " ++ bolded url
   Warp.run port
     . gzip def
@@ -74,16 +74,16 @@ handleClientCommands q req = do
 
 stream :: TChan Event -> C.Source IO ServerEvent
 stream c = do
-  c' <- liftIO . atomically $ cloneTChan c
+  c' <- io . atomically $ cloneTChan c
   replayOldEvents c'
-  forever $ liftIO (atomically $ readTChan c') >>= yieldEvent
+  forever $ io (atomically $ readTChan c') >>= yieldEvent
 
 yieldEvent :: Event -> C.Source IO ServerEvent
 yieldEvent = C.yield . makeServerEvent . encode
 
 replayOldEvents :: TChan Event -> C.Source IO ServerEvent
 replayOldEvents c = do
-  xs <- liftIO . atomically $ availableTChanContents c
+  xs <- io . atomically $ availableTChanContents c
   writeLog $ "Sending " ++ show (length xs) ++ " events to new visitor."
   mapM_ yieldEvent (replayOf xs)
 

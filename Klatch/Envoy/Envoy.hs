@@ -5,18 +5,15 @@ module Klatch.Envoy.Envoy (main) where
 import Control.Applicative          ((<$>), (<*>))
 import Control.Concurrent.STM.TChan (newTChanIO, TChan)
 import Control.Concurrent.STM.TVar  (newTVarIO)
-import Control.Monad.IO.Class       (MonadIO, liftIO)
 import Pipes                        (Consumer, cat, for, (>->))
 
 import qualified Data.Map  as Map
 
 import Klatch.Common.AMQP   (Role (EnvoyRole), startAmqp)
-import Klatch.Envoy.Queue  (writeTo, readFrom, writeEvent, writeError)
-import Klatch.Envoy.Socket (handleConnect, handleSend)
+import Klatch.Envoy.Queue   (writeTo, readFrom, writeEvent, writeError)
+import Klatch.Envoy.Socket  (handleConnect, handleSend)
 import Klatch.Common.Types
-import Klatch.Common.Util  (runEffectsConcurrently, contents, newline,
-                            loggingWrites, loggingReads, encoder, decoder,
-                            onCtrlC, writeLog, bolded)
+import Klatch.Common.Util
 
 main :: IO ()
 main = do
@@ -41,7 +38,7 @@ initialize :: IO State
 initialize = (,) <$> (newTVarIO Map.empty) <*> newTChanIO
 
 handler :: State -> Consumer (Maybe Command) IO ()
-handler s = for cat (liftIO . handle s)
+handler s = for cat (io . handle s)
 
 handle :: State -> Maybe Command -> IO ()
 handle (_, c) Nothing    = writeError "" c 0 "Parse error"

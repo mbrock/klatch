@@ -7,7 +7,6 @@ import Control.Concurrent.STM        (atomically)
 import Control.Concurrent.STM.TChan
 import Control.Concurrent.STM.TVar
 import Control.Monad                 (forever, when)
-import Control.Monad.IO.Class        (liftIO)
 import Data.Maybe                    (fromMaybe)
 import Pipes                         (Pipe, (>->), await, yield, each)
 import Prelude                hiding (sequence)
@@ -70,7 +69,7 @@ decodeIrcMsg state = do
 
   case e of
     Just d -> do
-      nextId <- liftIO (nextEventId state)
+      nextId <- io (nextEventId state)
       yield $ x { payload = d, sequence = nextId }
     Nothing -> return ()
 

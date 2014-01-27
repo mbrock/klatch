@@ -51,10 +51,10 @@ silentDecoder :: FromJSON a => Pipe T.Text a IO ()
 silentDecoder = decoder >-> skipNothings
 
 contents :: TChan a -> Producer a IO ()
-contents c = forever $ liftIO (atomically $ readTChan c) >>= yield
+contents c = forever $ io (atomically $ readTChan c) >>= yield
 
 toChannel :: TChan a -> Consumer a IO ()
-toChannel c = for cat (liftIO . atomically . writeTChan c)
+toChannel c = for cat (io . atomically . writeTChan c)
 
 ignore :: Monad m => Consumer a m ()
 ignore = for cat (const $ return ())
@@ -102,7 +102,7 @@ showWithPrefix p x = formatLogLine (bolded p ++ show x)
 
 formatLogLine :: (Functor m, MonadIO m) => String -> m String
 formatLogLine x =
-  do t <- formatTime defaultTimeLocale "%c" <$> liftIO getCurrentTime
+  do t <- formatTime defaultTimeLocale "%c" <$> io getCurrentTime
      return (dimmed t ++ "\n  " ++ x ++ "\n")
 
 formatTimestamp :: Timestamp -> String
@@ -110,7 +110,7 @@ formatTimestamp x = formatTime defaultTimeLocale "%c"
   (posixSecondsToUTCTime (fromIntegral (x `div` 1000) :: NominalDiffTime))
 
 writeLog :: MonadIO m => String -> m ()
-writeLog x = liftIO $ formatLogLine x >>= putStrLn
+writeLog x = io $ formatLogLine x >>= putStrLn
 
 string :: T.Text -> String
 string = T.unpack

@@ -10,7 +10,6 @@ import Control.Concurrent.Async     (Async, async)
 import Control.Concurrent.STM       (atomically)
 import Control.Concurrent.STM.TChan (newTChanIO, writeTChan)
 import Control.Monad                (void)
-import Control.Monad.IO.Class       (liftIO)
 import Data.Map                     ((!))
 import Data.Text                    (Text, unpack)
 import Network.AMQP
@@ -98,7 +97,7 @@ connect role params = do
 
   outputChan <- newTChanIO
   writer <- async . runEffect . for (contents outputChan) $
-    liftIO . publishMsg chan outExchange bindingKey . makeMsg
+    io . publishMsg chan outExchange bindingKey . makeMsg
 
   return $ (Queue queueChan (writeTChan outputChan), writer)
 
