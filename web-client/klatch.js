@@ -16,7 +16,7 @@ window.Klatch = {
       payload.synthetic = true;
       setTimeout(function () {
         Klatch.recordMessage(payload);
-      }, 500);
+      }, 0);
     }
   },
 

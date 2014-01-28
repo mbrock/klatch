@@ -59,7 +59,7 @@
 
       for (source in this.props.messages) {
         messages = this.props.messages[source];
-        messages = messages.slice(messages.length - 500);
+        messages = messages.slice(messages.length - 1000);
         areas.push(<Area name={source}
                          topic={this.props.topics[source]}
                          messages={messages}
