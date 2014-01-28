@@ -66,7 +66,9 @@
       }
 
       return <div className="area-splitter">
-        {this.props.online ? "Online" : "Offline"}
+        <header>
+          {this.props.online ? "Online" : "Offline"}
+        </header>
         {areas}
       </div>;
     }
