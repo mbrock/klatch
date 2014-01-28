@@ -7566,7 +7566,7 @@ var ReactErrorUtils = {
    * @return {function}
    */
   guard: function(func, name) {
-    if ("production" !== "development") {
+    if ("development" !== "development") {
       return function guarded() {
         try {
           return func.apply(this, arguments);

@@ -1,7 +1,7 @@
 /** @jsx React.DOM */
 
-$(function () {
-  var Viewer = Klatch.Viewer;
+setTimeout(function () {
+  var Viewer = window.Klatch.Viewer;
   var viewer = <Viewer />;
 
   (function downloadEvents () {
@@ -13,4 +13,4 @@ $(function () {
   })();
 
   React.renderComponent(viewer, log);
-});
+}, 0);

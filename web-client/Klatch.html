@@ -4,25 +4,33 @@
     <meta charset=utf-8 />
     <title>Klatch</title>
     <link rel="stylesheet/less" href="klatch.less" type="text/css" />
-
-    <script src="3rd/jquery.min.js"></script>
-    <script src="3rd/moment.min.js"></script>
-    <script src="3rd/react-with-addons.js"></script>
-    <script src="3rd/JSXTransformer.js"></script>
-    <script src="3rd/less-1.6.1.js"></script>
-
-    <script src="klatch.js" type="text/jsx"></script>
-    <script src="Klatch.Clever.js" type="text/jsx"></script>
-    <script src="Klatch.Message.js" type="text/jsx"></script>
-    <script src="Klatch.Replaying.js" type="text/jsx"></script>
-    <script src="Klatch.MessageView.js" type="text/jsx"></script>
-    <script src="Klatch.Area.js" type="text/jsx"></script>
-    <script src="Klatch.Viewer.js" type="text/jsx"></script>
-    <script src="Klatch.Main.js" type="text/jsx"></script>
   </head>
   <body>
     <section>
       <div id=log />
+      <script src="3rd/jquery.min.js"></script>
+      <script src="3rd/moment.min.js"></script>
+      <script src="3rd/react-with-addons.js"></script>
+      <script src="3rd/JSXTransformer.js"></script>
+      <script src="3rd/less-1.6.1.js"></script>
+  
+      <script src="klatch.js"></script>
+
+      <script src="projections/Klatch.Projections.Inhabitation.js"></script>
+      <script src="projections/Klatch.Projections.ReplayStatus.js"></script>
+      <script src="projections/Klatch.Projections.Messages.js"></script>
+      <script src="projections/Klatch.Projections.Online.js"></script>
+      <script src="projections/Klatch.Projections.Topics.js"></script>
+      <script src="projections/Klatch.Projections.AreaMinimization.js"></script>
+
+      <script src="Klatch.Clever.js"></script>
+      <script src="Klatch.Message.js"></script>
+      <script src="Klatch.Replaying.js" type="text/jsx"></script>
+      <script src="Klatch.MessageView.js" type="text/jsx"></script>
+      <script src="Klatch.Area.js" type="text/jsx"></script>
+      <script src="Klatch.Viewer.js" type="text/jsx"></script>
+      <script src="Klatch.Main.js" type="text/jsx"></script>
+     
     </section>
   </body>
 </html>
