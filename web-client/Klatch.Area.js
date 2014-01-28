@@ -128,12 +128,15 @@
 
       var messages;
 
+      var inhabitation = Klatch.projectionState("Inhabitation");
+      var usersHere = inhabitation[this.props.area];
+
       if (!this.props.minimized)
         messages = <div>
                     <section className="area-content" ref="content">
                      {this.props.messages}
                     </section>
-                    <InputBar area={this.props.area} />
+                    <InputBar area={this.props.area} users={usersHere} />
                    </div>;
 
       return (<article className={"area channel" + visibility}>
@@ -202,15 +205,20 @@
       //   line: { Send: { name: this.props.area.server, line: msg }}
       // });
 
-      Klatch.recordClientEvent({
-        Received: {
-          name: "freenode",
-          prefix: { User: { nick: "me" } },
-          command: "PRIVMSG",
-          params: [this.props.area],
-          trail: text
-        }
-      }, "irc");
+      if (this.props.users) {
+        var users = this.props.users;
+        var randomUser = users[Math.floor(Math.random() * users.length)];
+  
+        Klatch.recordClientEvent({
+          Received: {
+            name: "freenode",
+            prefix: { User: { nick: randomUser } },
+            command: "PRIVMSG",
+            params: [this.props.area],
+            trail: text
+          }
+        }, "irc");
+      }
     }
   });
 })();
