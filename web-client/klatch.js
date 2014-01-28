@@ -7,9 +7,13 @@ window.Klatch = {
   recordClientEvent: function (data) {
     var payload = {};
     payload[Klatch.ClientTag] = data;
-    return $.post('/api/command', JSON.stringify({
-      event: { Record: payload }
-    }));
+
+    if (Klatch.projectionState('Online').online)
+      return $.post('/api/command', JSON.stringify({
+        event: { Record: payload }
+      }));
+    else
+      Klatch.recordMessage(payload);
   },
 
   sendCommand: function (command) {
