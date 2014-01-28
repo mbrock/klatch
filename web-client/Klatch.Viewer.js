@@ -4,181 +4,189 @@
   var Replaying = Klatch.Replaying;
   var AreaSplitter = Klatch.AreaSplitter;
 
-  var Inhabitation = {
-    QUIT: function (inhabitation, name, msg, save) {
-      for (var key in inhabitation)
-        if (inhabitation[key].indexOf(name) != -1) {
-          save(key);
+  function Inhabitation () {
+    return {
+      state: {},
 
-          inhabitation[key] = inhabitation[key].filter(
-            function (x) { return x != name; });
+      forUserChannels: function (msg, f) {
+        var user = msg.irc.Received.prefix.User.nick;
+        for (var key in this.state)
+          if (this.state[key].indexOf(user) != -1)
+            f(key);
+      },
+
+      update: function (_, msg) {
+        var commands = {
+          QUIT: function (name, msg) {
+            for (var key in this.state)
+              if (this.state[key].indexOf(name) != -1)
+                this.state[key] = this.state[key].filter(
+                  function (x) { return x != name; });
+          },
+
+          JOIN: function (name, msg) {
+            var channel = msg.getChannelId();
+            if (!this.state.hasOwnProperty(channel))
+              this.state[channel] = [];
+
+            this.state[channel].push(name);
+          },
+
+          PART: function (name, msg) {
+            var channel = msg.getChannelId();
+
+            if (!this.state.hasOwnProperty(channel))
+              return;
+
+            this.state[channel] = this.state[channel].filter(
+              function (x) { return x != name; });
+          }
+        };
+
+        var irc;
+        if (irc = msg.irc ? msg.irc.Received : false) {
+          if (commands.hasOwnProperty(irc.command)) {
+            var nick = irc.prefix.User ? irc.prefix.User.nick : "[unknown]";
+            commands[irc.command].call(this, nick, msg);
+          }
         }
-    },
-
-    JOIN: function (inhabitation, name, msg, save) {
-      var channel = msg.getChannelId();
-      if (!inhabitation.hasOwnProperty(channel))
-        inhabitation[channel] = [];
-
-      inhabitation[channel].push(name);
-
-      save(channel);
-    },
-
-    PART: function (inhabitation, name, msg, save) {
-      var channel = msg.getChannelId();
-
-      if (!inhabitation.hasOwnProperty(channel))
-        return;
-
-      save(channel);
-
-      inhabitation[channel] = inhabitation[channel].filter(
-        function (x) { return x != name; });
-    },
-
-    handle: function (inhabitation, msg, save) {
-      var irc = msg.irc.Received;
-      if (this.hasOwnProperty(irc.command)) {
-        var nick = irc.prefix.User ? irc.prefix.User.nick : "[unknown]";
-        this[irc.command](inhabitation, nick, msg, save);
-        return true;
       }
-
-      return false;
-    }
+    };
   };
+
+  function ReplayStatus () {
+    return {
+      replaying: 0,
+      replayed: 0,
+
+      update: function (_, msg) {
+        if (msg.meta && msg.meta.Replaying) {
+          this.replaying = msg.meta.Replaying.count;
+          this.replayed = 0;
+        }
+
+        else if (msg.meta && msg.meta.Streaming)
+          this.replaying = this.replayed = 0;
+
+        else if (this.replaying && !msg.meta)
+          this.replayed += 1;
+      }
+    };
+  }
+
+  function Messages () {
+    return {
+      state: {},
+      update: function (projections, msg) {
+        if (msg.socket && msg.socket.Error)
+          this.save(msg.getNameForArea(), msg);
+
+        if (!msg.irc || !msg.irc.Received) return;
+
+        var command = msg.irc.Received.command;
+        var inhabitation = projections.inhabitation.state;
+
+        if (command == 'PRIVMSG')
+          this.save(msg.getNameForArea(), msg);
+            
+        else if (command == 'NICK') {
+          for (var channelName in inhabitation)
+            if (inhabitation[channelName].indexOf(msg.name) >= 0)
+              this.save(channelName, msg)
+
+        } else if (command == 'JOIN' || command == 'PART')
+          this.save(msg.getChannelId(), msg);
+
+        else if (command == 'QUIT')
+          projections.inhabitation.forUserChannels(msg, function (area) {
+            this.save(area, msg);
+          }.bind(this));
+      },
+
+      save: function (source, msg) {
+        if (!this.state.hasOwnProperty(source))
+          this.state[source] = [];
+        this.state[source].push(msg);
+      }
+    };
+  }
+
+  function Online () {
+    return {
+      state: false,
+      update: function (_, msg) {
+        if (msg.meta && msg.meta.hasOwnProperty('Online'))
+          this.state = msg.meta.Online;
+      }
+    };
+  }
+
+  function Topics () {
+    return {
+      state: {},
+      update: function (_, msg) {
+        var irc;
+        if (irc = (msg.irc && msg.irc.Received))
+          if (irc.command == '332')
+            this.state[msg.getChannelId(1)] = irc.trail;
+      }
+    };
+  }
+
+  function AreaMinimization () {
+    return {
+      state: {},
+      update: function (_, msg) {
+        var data;
+        if (data = msg['klatch.js'])
+          if (data.ToggleAreaMinimization) {
+            source = data.ToggleAreaMinimization.area;
+            this.state[source] = !this.state[source];
+          }
+      }
+    };
+  }
 
   Klatch.Viewer = React.createClass({
     getInitialState: function () {
       return {
-        replaying: 0,
-        replayed: 0,
-        messages: { },
-        areaMinimization: { },
-        inhabitation: { },
-        topics: { }
+        replayStatus: ReplayStatus(),
+        messages: Messages(),
+        areaMinimization: AreaMinimization(),
+        inhabitation: Inhabitation(),
+        topics: Topics(),
+        online: Online()
       };
     },
 
     render: function () {
-      if (this.state.replaying > 0) {
-        var progress = this.state.replayed / this.state.replaying;
+      if (this.state.replayStatus.replaying > 0) {
+        var progress = 
+          this.state.replayStatus.replayed / 
+          this.state.replayStatus.replaying;
+
         return <Replaying progress={progress} />;
       } else
-        return <AreaSplitter messages={this.state.messages}
-                             topics={this.state.topics}
-                             areaMinimization={this.state.areaMinimization}
-                             online={this.state.online} />;
-    },
-
-    updateReplayCount: function (isMetamessage) {
-      if (this.state.replaying && !isMetamessage)
-        return this.state.replayed + 1;
-      else
-        return this.state.replayed;
+        return (
+          <AreaSplitter messages={this.state.messages.state}
+                        topics={this.state.topics.state}
+                        areaMinimization={this.state.areaMinimization.state}
+                        online={this.state.online.state} />
+        );
     },
 
     recordMessage: function (data) {
       var message = Klatch.MessageModel(data);
-      var messages = this.state.messages;
-      var inhabitation = this.state.inhabitation;
-      var newMessages = {};
-      var newTopics = {};
-      var update = {};
-      var source;
+      var state = this.state;
 
-      if (data.meta && data.meta.Replaying) {
-        update.replaying = data.meta.Replaying.count;
-        update.replayed = 0;
-      }
+      state.areaMinimization.update(state, message);
+      state.messages.update(state, message);
+      state.inhabitation.update(state, message);
+      state.replayStatus.update(state, message);
+      state.online.update(state, message);
+      state.topics.update(state, message);
 
-      else if (data.meta && data.meta.Streaming) {
-        update.replaying = update.replayed = 0;
-      }
-
-      else if (data.meta && (data.meta.hasOwnProperty('Online'))) {
-        update.online = data.meta.Online;
-        console.log(update);
-      }
-
-      else if ((data.irc && data.irc.Received) ||
-               (data.socket && data.socket.Error)) {
-
-        function save (source) {
-          newMessages[source] = (messages[source] || []).concat(message);
-        }
-
-        if (data.irc) {
-          var msg = data.irc.Received;
-          var command = msg.command;
-
-          if (command == 'PRIVMSG') {
-            save(message.getNameForArea());
-            
-          } else if (command == 'NICK') {
-            for (var channelName in inhabitation)
-              if (inhabitation[channelName].indexOf(msg.name) >= 0)
-                save(channelName)
-            
-          } else if (Inhabitation.handle(inhabitation, message, save)) {
-
-          } else if (command == '332') {
-            newTopics[message.getChannelId(1)] = msg.trail;
-          
-          } else if (command == 'PING') {
-            return;
-
-          } else {
-            console.log(msg);
-          }
-        }
-
-        if (data.socket && data.socket.Error)
-          save(message.getNameForArea());
-
-        update.messages = $.extend({}, messages, newMessages);
-        update.topics = $.extend({}, this.state.topics, newTopics);
-        update.replayed = this.updateReplayCount(data.meta);
-      }
-
-      else if (data['klatch.js']) {
-        update = this.handleClientEvent(data['klatch.js'], message);
-      }
-
-      else {
-        update.replayed = this.updateReplayCount(data.meta);
-      }
-
-      this.setState(update);
-    },
-
-    handleClientEvent: function (data, message) {
-      var messages = {};
-      var areaMinimization = {};
-
-      if (data.MarkAsRead) {
-        source = data.MarkAsRead.area;
-        if (this.state.messages[source])
-          messages[source] = this.state.messages[source].concat(message);
-
-      } else if (data.ToggleAreaMinimization) {
-        source = data.ToggleAreaMinimization.area;
-        areaMinimization[source] = !this.state.areaMinimization[source];
-
-      } else {
-        console.log("Unrecognized client event '%o': %o", data, message);
-      }
-
-      return {
-        messages:
-          $.extend({}, this.state.messages, messages),
-
-        areaMinimization:
-          $.extend({}, this.state.areaMinimization, areaMinimization),
-
-        replayed: this.updateReplayCount(false)
-      };
+      this.setState(state);
     }
   });
 })();
