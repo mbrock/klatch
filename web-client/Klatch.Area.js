@@ -197,10 +197,20 @@
     },
 
     handleCommand: function (text) {
-      var msg = "PRIVMSG " + this.props.area.name + " :" + text;
-      Klatch.sendCommand({
-        line: { Send: { name: this.props.area.server, line: msg }}
-      });
+      var msg = "PRIVMSG " + this.props.area + " :" + text;
+      // Klatch.sendCommand({
+      //   line: { Send: { name: this.props.area.server, line: msg }}
+      // });
+
+      Klatch.recordClientEvent({
+        Received: {
+          name: "freenode",
+          prefix: { User: { nick: "me" } },
+          command: "PRIVMSG",
+          params: [this.props.area],
+          trail: text
+        }
+      }, "irc");
     }
   });
 })();

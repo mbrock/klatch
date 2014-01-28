@@ -4,9 +4,9 @@ window.Klatch = {
 
   Projections: {},
   
-  recordClientEvent: function (data) {
+  recordClientEvent: function (data, tag) {
     var payload = {};
-    payload[Klatch.ClientTag] = data;
+    payload[tag || Klatch.ClientTag] = data;
 
     if (Klatch.projectionState('Online').online)
       return $.post('/api/command', JSON.stringify({
