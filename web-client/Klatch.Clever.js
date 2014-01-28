@@ -1,6 +1,8 @@
 (function () {
   Klatch.Clever = {
     scalarHash: function (s) {
+      if (!s) return 0;
+
       // NOTE: Highly bogus, not actually clever.
       var h = i = c = 0;
       while (i++ < s.length) {

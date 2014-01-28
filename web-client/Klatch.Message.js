@@ -27,7 +27,7 @@
 
   MessageModel.prototype.getChannelId = function (i) {
     var msg = this.irc && this.irc.Received;
-    return msg.params[i || 0] + ' (' + msg.name + ')';
+    return msg.params[i || 0];
   },
 
   MessageModel.prototype.getServerName = function () {

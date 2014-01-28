@@ -12,8 +12,12 @@ window.Klatch = {
       return $.post('/api/command', JSON.stringify({
         event: { Record: payload }
       }));
-    else
-      Klatch.recordMessage(payload);
+    else {
+      payload.synthetic = true;
+      setTimeout(function () {
+        Klatch.recordMessage(payload);
+      }, 500);
+    }
   },
 
   sendCommand: function (command) {

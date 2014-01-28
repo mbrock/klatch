@@ -36,15 +36,15 @@
           return <Message message={message} key={message.sequence} />;
       });
 
-      var isChannel = this.props.name.match(/^(#.*) \((.*)\)$/);
+      var isChannel = this.props.name.match(/^#/);
       var descriptor = isChannel
-        ? { name: isChannel[1], server: isChannel[2] }
+        ? this.props.name
         : null;
 
       return isChannel ?
                  <Channel area={descriptor}
                           topic={this.props.topic}
-                          minimized={this.props.minimized}
+                          minimized={this.props.minimized ? true : false}
                           messages={messages} />
                : <Boring name={this.props.name}
                          minimized={this.props.minimized}
@@ -59,9 +59,10 @@
 
       for (source in this.props.messages) {
         messages = this.props.messages[source];
+        messages = messages.slice(messages.length - 500);
         areas.push(<Area name={source}
                          topic={this.props.topics[source]}
-                         messages={this.props.messages[source]}
+                         messages={messages}
                          minimized={this.props.areaMinimization[source]} />);
       }
 
@@ -113,7 +114,8 @@
       $("a[rel=toggle-area-minimization]", node).click(function () {
         Klatch.recordClientEvent({
           ToggleAreaMinimization: {
-            area: self.props.name
+            area: self.props.name,
+            server: self.props.server
           }
         });
       });
@@ -135,7 +137,7 @@
                    </div>;
 
       return (<article className={"area channel" + visibility}>
-               <AreaHeader name={this.props.area.name}
+               <AreaHeader name={this.props.area}
                            topic={this.props.topic} />
                {messages}
               </article>);
@@ -150,6 +152,7 @@
     },
 
     scrollDown: function () {
+      if (this.props.minimized) return;
       var content = this.refs.content.getDOMNode();
       $(content).animate({
         scrollTop: content.scrollHeight

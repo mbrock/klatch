@@ -4,6 +4,18 @@
   var Replaying = Klatch.Replaying;
   var AreaSplitter = Klatch.AreaSplitter;
 
+  function shallowClone (x) {
+    var y = {};
+    for (k in x)
+      y[k] = x[k];
+    return y;
+  }
+
+  function clone (x) {
+    // Ain't nobody got time for this.
+    return shallowClone(x);
+  }
+
   Klatch.Viewer = React.createClass({
     getInitialState: function () {
       var state = {};
@@ -22,14 +34,16 @@
 
       Object.keys(state).forEach(function (key) {
         var projection = state[key];
-        projection.update(state, message, function (f) {
+        var next = projection;
+
+        next.update(state, message, function (f) {
           postponed.push(f.bind(projection));
         });
       });
 
       postponed.forEach(function (f) { f() });
 
-      this.setState(state);
+      this.replaceState(state);
     },
 
     render: function () {
