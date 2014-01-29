@@ -221,7 +221,7 @@
         Klatch.recordClientEvent({
           Received: {
             name: "freenode",
-            prefix: { User: { nick: "klatch" } },
+            prefix: { User: { nick: "me" } },
             command: "PRIVMSG",
             params: [this.props.area],
             trail: text
