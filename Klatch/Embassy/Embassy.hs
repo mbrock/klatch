@@ -64,7 +64,7 @@ main = do
         (amqp, _) <- startAmqp EmbassyRole
         runEffectsConcurrently
            (contents commandQueue >-> encoder >-> writeTo amqp)
-           (((yield . metaevent $ MetaOnline False) >> each olds >>
+           (((yield . metaevent $ MetaOnline True) >> each olds >>
               (readFrom amqp >-> decoder
                              >-> skipNothings
                              >-> into (writeToLog fileLog)))
