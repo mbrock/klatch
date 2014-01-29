@@ -2,6 +2,22 @@ window.Klatch = {
   ClientTag: 'klatch.js',
   ClientVersion: '0.0.1',
 
+  Projection: {
+    forSubtag: function (tag, subtag, f) {
+      return function (projections, msg, postpone) {
+        if (msg[tag] && msg[tag][subtag])
+          f.call(this, projections, msg[tag][subtag], postpone, msg);
+      };
+    },
+
+    forTag: function (tag, f) {
+      return function (projections, msg, postpone) {
+        if (msg[tag])
+          f.call(this, projections, msg[tag], postpone);
+      };
+    }
+  },
+
   Projections: {},
 
   recordClientEvent: function (data, tag) {

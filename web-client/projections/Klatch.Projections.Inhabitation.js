@@ -8,43 +8,40 @@ Klatch.Projections.Inhabitation = function () { return {
         f(key);
   },
 
-  update: function (_, msg, postpone) {
-    var commands = {
-      QUIT: function (name, msg, postpone) {
-        postpone(function () {
-          for (var key in this.state)
-            if (this.state[key].indexOf(name) != -1)
-              this.state[key] = this.state[key].filter(
-                function (x) { return x != name; });
-        });
-      },
+  update: Klatch.Projection.forSubtag(
+    'irc', 'Received', function (_, irc, postpone, msg) {
+      var commands = {
+        QUIT: function (name, msg) {
+          postpone(function () {
+            for (var key in this.state)
+              if (this.state[key].indexOf(name) != -1)
+                this.state[key] = this.state[key].filter(
+                  function (x) { return x != name; });
+          });
+        },
 
-      JOIN: function (name, msg) {
-        var channel = msg.getChannelId();
-        if (!this.state.hasOwnProperty(channel))
-          this.state[channel] = [];
+        JOIN: function (name, msg) {
+          var channel = msg.getChannelId();
+          if (!this.state.hasOwnProperty(channel))
+            this.state[channel] = [];
 
-        this.state[channel].push(name);
-      },
+          this.state[channel].push(name);
+        },
 
-      PART: function (name, msg) {
-        var channel = msg.getChannelId();
+        PART: function (name, msg) {
+          var channel = msg.getChannelId();
 
-        if (!this.state.hasOwnProperty(channel))
-          return;
+          if (!this.state.hasOwnProperty(channel))
+            return;
 
-        this.state[channel] = this.state[channel].filter(
-          function (x) { return x != name; });
-      }
-    };
+          this.state[channel] = this.state[channel].filter(
+            function (x) { return x != name; });
+        }
+      };
 
-    var irc;
-    if (irc = msg.irc ? msg.irc.Received : false) {
       if (commands.hasOwnProperty(irc.command)) {
         var nick = irc.prefix.User ? irc.prefix.User.nick : "[unknown]";
-        commands[irc.command].call(this, nick, msg, postpone);
+        commands[irc.command].call(this, nick, msg);
       }
-    }
-  }
-
-} };
+    })
+}};
