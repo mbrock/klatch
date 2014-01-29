@@ -160,6 +160,8 @@
 
     scrollDown: function () {
       if (this.props.minimized) return;
+      if (Klatch.projectionState("ScrollLock")[this.props.area]) return;
+
       var content = this.refs.content.getDOMNode();
       $(content).animate({
         scrollTop: content.scrollHeight
@@ -204,25 +206,28 @@
     },
 
     handleCommand: function (text) {
-      if (text == "/hide-boring-stuff") {
+      if (text === "/hide-boring-stuff")
         Klatch.recordClientEvent({ HideBoringStuff: this.props.area });
-        return;
+
+      else if (text === "/scroll-lock")
+        Klatch.recordClientEvent({ ScrollLock: this.props.area });
+
+      else {
+        var msg = "PRIVMSG " + this.props.area + " :" + text;
+        Klatch.sendCommand({
+          line: { Send: { name: "freenode", line: msg }}
+        });
+
+        Klatch.recordClientEvent({
+          Received: {
+            name: "freenode",
+            prefix: { User: { nick: "klatch" } },
+            command: "PRIVMSG",
+            params: [this.props.area],
+            trail: text
+          }
+        }, "irc");
       }
-
-      var msg = "PRIVMSG " + this.props.area + " :" + text;
-      Klatch.sendCommand({
-        line: { Send: { name: "freenode", line: msg }}
-      });
-
-      Klatch.recordClientEvent({
-        Received: {
-          name: "freenode",
-          prefix: { User: { nick: "klatch" } },
-          command: "PRIVMSG",
-          params: [this.props.area],
-          trail: text
-        }
-      }, "irc");
     }
   });
 })();
