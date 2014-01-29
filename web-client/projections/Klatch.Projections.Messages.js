@@ -8,10 +8,14 @@ Klatch.Projections.Messages = function () { return {
 
     var command = msg.irc.Received.command;
     var inhabitation = projections.Inhabitation.state;
+    var area = msg.getNameForArea();
 
     if (command == 'PRIVMSG')
-      this.save(msg.getNameForArea(), msg);
-        
+      this.save(area, msg);
+
+    else if (projections.HideBoringStuff.state[area])
+      return;
+
     else if (command == 'NICK') {
       for (var channelName in inhabitation)
         if (inhabitation[channelName].indexOf(msg.name) >= 0)

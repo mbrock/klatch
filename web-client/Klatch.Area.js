@@ -200,7 +200,10 @@
     },
 
     handleCommand: function (text) {
-      // horrible
+      if (text == "/hide-boring-stuff") {
+        Klatch.recordClientEvent({ HideBoringStuff: this.props.area });
+        return;
+      }
 
       var msg = "PRIVMSG " + this.props.area + " :" + text;
       Klatch.sendCommand({
