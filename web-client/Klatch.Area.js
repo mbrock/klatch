@@ -200,25 +200,22 @@
     },
 
     handleCommand: function (text) {
-      var msg = "PRIVMSG " + this.props.area + " :" + text;
-      // Klatch.sendCommand({
-      //   line: { Send: { name: this.props.area.server, line: msg }}
-      // });
+      // horrible
 
-      if (this.props.users) {
-        var users = this.props.users;
-        var randomUser = users[Math.floor(Math.random() * users.length)];
-  
-        Klatch.recordClientEvent({
-          Received: {
-            name: "freenode",
-            prefix: { User: { nick: randomUser } },
-            command: "PRIVMSG",
-            params: [this.props.area],
-            trail: text
-          }
-        }, "irc");
-      }
+      var msg = "PRIVMSG " + this.props.area + " :" + text;
+      Klatch.sendCommand({
+        line: { Send: { name: "freenode", line: msg }}
+      });
+
+      Klatch.recordClientEvent({
+        Received: {
+          name: "freenode",
+          prefix: { User: { nick: "klatch" } },
+          command: "PRIVMSG",
+          params: [this.props.area],
+          trail: text
+        }
+      }, "irc");
     }
   });
 })();
