@@ -59,6 +59,10 @@
 
       for (source in this.props.messages) {
         messages = this.props.messages[source];
+
+        if (Klatch.projectionState("HideBoringStuff")[source])
+          messages = messages.filter(function (x) { return !x.isBoring() });
+
         messages = messages.slice(messages.length - 1000);
         areas.push(<Area name={source}
                          topic={this.props.topics[source]}

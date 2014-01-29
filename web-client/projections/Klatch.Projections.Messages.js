@@ -13,9 +13,6 @@ Klatch.Projections.Messages = function () { return {
     if (command == 'PRIVMSG')
       this.save(area, msg);
 
-    else if (projections.HideBoringStuff.state[area])
-      return;
-
     else if (command == 'NICK') {
       for (var channelName in inhabitation)
         if (inhabitation[channelName].indexOf(msg.name) >= 0)

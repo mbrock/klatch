@@ -39,4 +39,9 @@
     var msg = this.irc && this.irc.Received;
     return msg && msg.prefix && msg.prefix.User && msg.prefix.User.nick;
   };
+
+  MessageModel.prototype.isBoring = function () {
+    var msg = this.irc && this.irc.Received;
+    return !(msg && msg.command === 'PRIVMSG');
+  };
 })();
