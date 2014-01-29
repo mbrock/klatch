@@ -50,21 +50,23 @@ main = do
 
     webServer <- async $ Klatch.Embassy.HTTP.run eventQueue commandQueue
     link webServer
+    
+    let initialEvents =
+          (yield (metaevent $ MetaOnline (not offlineMode)) >> each olds)
 
     if offlineMode
       then do
         writeLog $ "Offline mode; not reading queues."
 
         runEffect $
-          (yield (metaevent (MetaOnline False)) >> each olds)
-            >-> forever (decodeIrcMsg state)
-            >-> toChannel eventQueue
+            initialEvents >-> forever (decodeIrcMsg state)
+                          >-> toChannel eventQueue
         wait webServer
       else do
         (amqp, _) <- startAmqp EmbassyRole
         runEffectsConcurrently
            (contents commandQueue >-> encoder >-> writeTo amqp)
-           (((yield . metaevent $ MetaOnline True) >> each olds >>
+           ((initialEvents >>
               (readFrom amqp >-> decoder
                              >-> skipNothings
                              >-> into (writeToLog fileLog)))
