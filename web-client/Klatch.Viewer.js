@@ -54,13 +54,17 @@
           replayStatus.replaying;
 
         return <Replaying progress={progress} />;
-      } else
+      } else {
+        var theme = Klatch.projectionState("SetTheme");
         return (
-          <AreaSplitter messages={this.state.Messages.state}
-                        topics={this.state.Topics.state}
-                        areaMinimization={this.state.AreaMinimization.state}
-                        online={this.state.Online.state} />
+          <div data-theme-uri={theme}>
+            <AreaSplitter messages={this.state.Messages.state}
+                          topics={this.state.Topics.state}
+                          areaMinimization={this.state.AreaMinimization.state}
+                          online={this.state.Online.state} />
+          </div>
         );
+      }
     }
   });
 })();

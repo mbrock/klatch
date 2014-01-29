@@ -206,11 +206,16 @@
     },
 
     handleCommand: function (text) {
+      var match;
+
       if (text === "/hide-boring-stuff")
         Klatch.recordClientEvent({ HideBoringStuff: this.props.area });
 
       else if (text === "/scroll-lock")
         Klatch.recordClientEvent({ ScrollLock: this.props.area });
+
+      else if (match = text.match(/^\/set-theme (.*)$/))
+        Klatch.recordClientEvent({ SetTheme: match[1] });
 
       else {
         var msg = "PRIVMSG " + this.props.area + " :" + text;

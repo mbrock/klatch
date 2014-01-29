@@ -6,202 +6,7 @@
 @standard-border: 1px solid @border-color;
 @area-width: 660px;
 
-* { box-sizing: border-box }
-
-body {
-  font-family: "Anonymous Pro", "Ubuntu Mono", monospace;
-  background-color: #ccc;
-  color: #333;
-  font-size: 16px;
-
-  > section {
-    width: @area-width;
-    margin: 0 auto;
-  }
-}
-
-.timestamp {
-  display: block;
-  float: right;
-  color: #777;
-  margin-left: 1ex;
-  margin-bottom: 8px;
-  text-align: right;
-  font-size: 80%;
-}
-
-.server-key {
-  font-weight: bold;
-  color: grey;
-  width: 10em;
-  margin-right: 1ex;
-}
-
-.command {
-  display: inline-block;
-  color: maroon;
-  margin-right: 2ex;
-  width: 10ex;
-  text-align: right;
-}
-
-.params {
-  margin-right: 1ex;
-}
-
-.trail {
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
-.error-message {
-  .command {
-    color: darken(red, 10%);
-  }
-
-  .trail {
-    font-style: italic;
-  }
-}
-
-section > div {
-  margin-bottom: 8px;
-}
-
-p {
-  display: block;
-  margin: 0;
-
-  > span {
-    display: inline-block;
-    line-height: 1.1;
-    margin-left: 6px;
-  }
-
-  > cite {
-    display: inline-block;
-    font-weight: bold;
-    font-style: normal;
-
-    &:after { content: ":" }
-  }
-}
-
-article {
-  display: block;
-  float: left;
-
-  width: @area-width;
-
-  margin-right: 5px;
-  padding: 0;
-
-  background-color: #f3f3f3;
-  border: @standard-border;
-  border-top: 0;
-  border-bottom: 0;
-
-  &.minimized {
-    opacity: 0.6;
-    height: auto !important;
-    border-width: 0 inherit 0 inherit;
-
-    &:hover { opacity: 0.9 }
-
-    h2 {
-      display: none;
-    }
-
-    a[rel=toggle-area-minimization]:before {
-      content: "▼";
-    }
-
-    a:not([rel=toggle-area-minimization]) {
-      opacity: 0
-    }
-  }
-
-  section {
-    padding: 10px;
-    overflow-y: scroll;
-    height: 380px;
-    font-size: 15px;
-  }
-
-  &.boring section {
-    height: 200px;
-  }
-
-  h1, h2 {
-    margin: 0;
-    padding-left: 8px;
-  }
-
-  h1 {
-    line-height: @header-height;
-    font-size: @header-size;
-
-    color: white;
-    font-weight: bold;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-
-    a {
-      color: white;
-      text-decoration: none;
-      margin-right: 8px;
-
-      &[rel=toggle-area-minimization]:before {
-        position: relative;
-        top: 2px;
-        content: "▲";
-      }
-    }
-
-    span {
-      margin-left: 8px;
-    }
-  }
-
-  h2 {
-    line-height: @smaller-header-height;
-    height: @smaller-header-height;
-    font-size: @smaller-header-size;
-
-    border-bottom: 1px solid @border-color;
-    font-weight: normal;
-    background-color: #eee;
-    opacity: 0.9;
-
-    white-space: nowrap;
-    overflow: auto;
-
-    -webkit-box-shadow: 0px 0px 10px 0px rgba(50, 50, 50, 0.35);
-    -moz-box-shadow:    0px 0px 10px 0px rgba(50, 50, 50, 0.35);
-    box-shadow:         0px 0px 10px 0px rgba(50, 50, 50, 0.35);
-  }
-
-  hr {
-    height: 1px;
-    border: none;
-    background-color: @border-color;
-
-    & + hr { display: none }
-  }
-
-  .input {
-    box-sizing: border-box;
-    width: 100%;
-    outline: none;
-    font: inherit;
-    line-height: 1.5;
-    margin-bottom: 0;
-    padding-left: 16px;
-    border: 0;
-    border-top: @standard-border;
-    border-bottom: @standard-border;
-  }
-}
+body { margin: 0; background-color: #ccc }
 
 div.replaying {
   text-align: left;
@@ -213,21 +18,226 @@ div.replaying {
   }
 }
 
-@-webkit-keyframes fade-in {
-  0%   { opacity: 0 }
-  100% { opacity: 1 }
+.theme-klatch-nice () {
+  * { box-sizing: border-box }
+   
+  font-family: ubuntu;
+  color: #333;
+  font-size: 16px;
+  width: 100%;
+
+  > div {
+    width: @area-width;
+    margin: 0 auto;
+    
+    .timestamp {
+      display: block;
+      float: right;
+      color: #777;
+      margin-left: 1ex;
+      margin-bottom: 8px;
+      text-align: right;
+      font-size: 80%;
+    }
+    
+    .server-key {
+      font-weight: bold;
+      color: grey;
+      width: 10em;
+      margin-right: 1ex;
+    }
+    
+    .command {
+      display: inline-block;
+      color: maroon;
+      margin-right: 2ex;
+      width: 10ex;
+      text-align: right;
+    }
+    
+    .params {
+      margin-right: 1ex;
+    }
+    
+    .trail {
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    
+    .error-message {
+      .command {
+        color: darken(red, 10%);
+      }
+    
+      .trail {
+        font-style: italic;
+      }
+    }
+    
+    section > div {
+      margin-bottom: 8px;
+    }
+    
+    p {
+      display: block;
+      margin: 0;
+    
+      > span {
+        display: inline-block;
+        line-height: 1.1;
+        margin-left: 6px;
+      }
+    
+      > cite {
+        display: inline-block;
+        font-weight: bold;
+        font-style: normal;
+    
+        &:after { content: ":" }
+      }
+    }
+    
+    article {
+      display: block;
+      float: left;
+    
+      width: @area-width;
+    
+      margin-right: 5px;
+      padding: 0;
+    
+      background-color: #f3f3f3;
+      border: @standard-border;
+      border-top: 0;
+      border-bottom: 0;
+    
+      &.minimized {
+        opacity: 0.6;
+        height: auto !important;
+        border-width: 0 inherit 0 inherit;
+    
+        &:hover { opacity: 0.9 }
+    
+        h2 {
+          display: none;
+        }
+    
+        a[rel=toggle-area-minimization]:before {
+          content: "▼";
+        }
+    
+        a:not([rel=toggle-area-minimization]) {
+          opacity: 0
+        }
+      }
+    
+      section {
+        padding: 10px;
+        overflow-y: scroll;
+        height: 380px;
+        font-size: 15px;
+      }
+    
+      &.boring section {
+        height: 200px;
+      }
+    
+      h1, h2 {
+        margin: 0;
+        padding-left: 8px;
+      }
+    
+      h1 {
+        line-height: @header-height;
+        font-size: @header-size;
+    
+        color: white;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+    
+        a {
+          color: white;
+          text-decoration: none;
+          margin-right: 8px;
+    
+          &[rel=toggle-area-minimization]:before {
+            position: relative;
+            top: 2px;
+            content: "▲";
+          }
+        }
+    
+        span {
+          margin-left: 8px;
+        }
+      }
+    
+      h2 {
+        line-height: @smaller-header-height;
+        height: @smaller-header-height;
+        font-size: @smaller-header-size;
+    
+        border-bottom: 1px solid @border-color;
+        font-weight: normal;
+        background-color: #eee;
+        opacity: 0.9;
+    
+        white-space: nowrap;
+        overflow: auto;
+    
+        -webkit-box-shadow: 0px 0px 10px 0px rgba(50, 50, 50, 0.35);
+        -moz-box-shadow:    0px 0px 10px 0px rgba(50, 50, 50, 0.35);
+        box-shadow:         0px 0px 10px 0px rgba(50, 50, 50, 0.35);
+      }
+    
+      hr {
+        height: 1px;
+        border: none;
+        background-color: @border-color;
+    
+        & + hr { display: none }
+      }
+    
+      .input {
+        box-sizing: border-box;
+        width: 100%;
+        outline: none;
+        font: inherit;
+        line-height: 1.5;
+        margin-bottom: 0;
+        padding-left: 16px;
+        border: 0;
+        border-top: @standard-border;
+        border-bottom: @standard-border;
+      }
+    }
+      
+    @-webkit-keyframes fade-in {
+      0%   { opacity: 0 }
+      100% { opacity: 1 }
+    }
+    
+    -webkit-animation-name: fade-in;
+    -webkit-animation-timing-function: ease-in;
+    -webkit-animation-duration: 3s;
+    
+    header {
+      height: @smaller-header-height;
+      line-height: @smaller-header-height;
+      font-size: @smaller-header-size;
+      text-align: right;
+      font-style: italic;
+    }
+  }
+}  
+
+[data-theme-uri='//swa.sh/klatch/nice'] {
+  .theme-klatch-nice();
 }
 
-.area-splitter {
-  -webkit-animation-name: fade-in;
-  -webkit-animation-timing-function: ease-in;
-  -webkit-animation-duration: 3s;
-}
+[data-theme-uri='//swa.sh/klatch/nice-mono'] {
+  .theme-klatch-nice();
 
-header {
-  height: @smaller-header-height;
-  line-height: @smaller-header-height;
-  font-size: @smaller-header-size;
-  text-align: right;
-  font-style: italic;
+  font-family: 'Ubuntu Mono';
 }
