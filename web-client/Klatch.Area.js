@@ -98,7 +98,7 @@
     },
 
     calculateColor: function () {
-      return Klatch.Clever.assignColor(this.props.area.name);
+      return Klatch.Clever.assignColor(Klatch.areaId(this.props.area));
     },
 
     componentDidMount: function (node) {
