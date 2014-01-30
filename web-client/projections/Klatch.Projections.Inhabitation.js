@@ -2,10 +2,11 @@ Klatch.Projections.Inhabitation = function () { return {
   state: {},
 
   forUserChannels: function (msg, f) {
-    var user = msg.irc.Received.prefix.User.nick;
+    var user = msg.irc.Received.prefix.User;
+    if (!user) return;
     for (var key in this.state)
       if (this.state[key].indexOf(user) != -1)
-        f(key);
+        f(Klatch.fromAreaId(key));
   },
 
   update: Klatch.Projection.forSubtag(
@@ -21,20 +22,20 @@ Klatch.Projections.Inhabitation = function () { return {
         },
 
         JOIN: function (name, msg) {
-          var channel = msg.getChannelId();
-          if (!this.state.hasOwnProperty(channel))
-            this.state[channel] = [];
+          var areaId = msg.getAreaId();
+          if (!this.state.hasOwnProperty(areaId))
+            this.state[areaId] = [];
 
-          this.state[channel].push(name);
+          this.state[areaId].push(name);
         },
 
         PART: function (name, msg) {
-          var channel = msg.getChannelId();
+          var areaId = msg.getAreaId();
 
-          if (!this.state.hasOwnProperty(channel))
+          if (!this.state.hasOwnProperty(areaId))
             return;
 
-          this.state[channel] = this.state[channel].filter(
+          this.state[areaId] = this.state[areaId].filter(
             function (x) { return x != name; });
         }
       };

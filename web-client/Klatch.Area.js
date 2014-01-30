@@ -36,17 +36,14 @@
           return <Message message={message} key={message.sequence} />;
       });
 
-      var isChannel = this.props.name.match(/^#/);
-      var descriptor = isChannel
-        ? this.props.name
-        : null;
+      var isChannel = this.props.area.name.match(/^#/);
 
       return isChannel ?
-                 <Channel area={descriptor}
+                 <Channel area={this.props.area}
                           topic={this.props.topic}
                           minimized={this.props.minimized ? true : false}
                           messages={messages} />
-               : <Boring name={this.props.name}
+               : <Boring area={this.props.area}
                          minimized={this.props.minimized}
                          messages={messages} />;
     }
@@ -64,7 +61,7 @@
           messages = messages.filter(function (x) { return !x.isBoring() });
 
         messages = messages.slice(messages.length - 1000);
-        areas.push(<Area name={source}
+        areas.push(<Area area={Klatch.fromAreaId(source)}
                          topic={this.props.topics[source]}
                          messages={messages}
                          minimized={this.props.areaMinimization[source]} />);
@@ -83,7 +80,7 @@
   var AreaHeader = Klatch.AreaHeader = React.createClass({
     render: function () {
       var style = { "background-color": this.calculateColor() };
-      var name = this.props.name;
+      var name = this.props.area.name;
 
       if (name.match(/^\w/))
         name = " " + name;
@@ -101,26 +98,20 @@
     },
 
     calculateColor: function () {
-      return Klatch.Clever.assignColor(this.props.name);
+      return Klatch.Clever.assignColor(this.props.area.name);
     },
 
     componentDidMount: function (node) {
       var self = this;
       $("a[rel=mark-as-read]", node).click(function () {
         Klatch.recordClientEvent({
-          MarkAsRead: {
-            area: self.props.name,
-            server: self.props.server
-          }
+          MarkAsRead: { area: self.props.area }
         });
       });
 
       $("a[rel=toggle-area-minimization]", node).click(function () {
         Klatch.recordClientEvent({
-          ToggleAreaMinimization: {
-            area: self.props.name,
-            server: self.props.server
-          }
+          ToggleAreaMinimization: self.props.area
         });
       });
     }
@@ -133,7 +124,7 @@
       var messages;
 
       var inhabitation = Klatch.projectionState("Inhabitation");
-      var usersHere = inhabitation[this.props.area];
+      var usersHere = inhabitation[Klatch.areaId(this.props.area)];
 
       if (!this.props.minimized)
         messages = <div>
@@ -144,7 +135,7 @@
                    </div>;
 
       return (<article className={"area channel" + visibility}>
-               <AreaHeader name={this.props.area}
+               <AreaHeader area={this.props.area}
                            topic={this.props.topic} />
                {messages}
               </article>);
@@ -160,7 +151,8 @@
 
     scrollDown: function () {
       if (this.props.minimized) return;
-      if (Klatch.projectionState("ScrollLock")[this.props.area]) return;
+      if (Klatch.projectionState("ScrollLock")
+          [Klatch.areaId(this.props.area)]) return;
 
       var content = this.refs.content.getDOMNode();
       $(content).animate({
@@ -182,7 +174,7 @@
                    </div>;
 
       return (<article className={"area boring" + visibility}>
-               <AreaHeader name={this.props.name}
+               <AreaHeader area={this.props.area}
                            minimized={this.props.minimized} />
                {messages}
               </article>);
@@ -218,17 +210,17 @@
         Klatch.recordClientEvent({ SetTheme: match[1] });
 
       else {
-        var msg = "PRIVMSG " + this.props.area + " :" + text;
+        var msg = "PRIVMSG " + this.props.area.name + " :" + text;
         Klatch.sendCommand({
-          line: { Send: { name: "freenode", line: msg }}
+          line: { Send: { name: this.props.area.server, line: msg }}
         });
 
         Klatch.recordClientEvent({
           Received: {
-            name: "freenode",
+            name: this.props.area.server,
             prefix: { User: { nick: "me" } },
             command: "PRIVMSG",
-            params: [this.props.area],
+            params: [this.props.area.name],
             trail: text
           }
         }, "irc");

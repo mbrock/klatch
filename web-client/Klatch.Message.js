@@ -26,13 +26,29 @@
   };
 
   MessageModel.prototype.getChannelId = function (i) {
-    var msg = this.irc && this.irc.Received;
-    return msg.params[i || 0];
+    var irc = this.irc && this.irc.Received;
+    if (irc)
+      return irc.params[i || 0];
+    else if (this.socket && this.socket.Error)
+      return this.socket.Error.name;
+  },
+
+  MessageModel.prototype.getAreaDescriptor = function (i) {
+    return {
+      name: this.getChannelId(i),
+      server: this.getServerName()
+    };
+  },
+
+  MessageModel.prototype.getAreaId = function (i) {
+    return Klatch.areaId(this.getAreaDescriptor(i));
   },
 
   MessageModel.prototype.getServerName = function () {
     if (this.irc && this.irc.Received)
       return this.irc.Received.name;
+    else if (this.socket && this.socket.Error)
+      return this.socket.Error.name;
   };
 
   MessageModel.prototype.getUserNick = function () {

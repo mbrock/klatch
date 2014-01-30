@@ -20,6 +20,16 @@ window.Klatch = {
 
   Projections: {},
 
+  areaId: function (area) {
+    return area.server + '/' + area.name;
+  },
+
+  fromAreaId: function (areaId) {
+    var match = areaId.match(/^([^\/]*)\/(.*)$/);
+    if (match) return { server: match[1], name: match[2] };
+    else throw new Error("Couldn't parse area ID " + areaId);
+  },
+
   recordClientEvent: function (data, tag) {
     var payload = {};
     payload[tag || Klatch.ClientTag] = data;
